@@ -7,7 +7,7 @@ import { SECTIONS, YEAR1_IDS, YEAR2_IDS, GRADE_SCALE, DEFAULT_YEAR1_CREDITS, DEF
 import { calcTermGPA, countGrades, requiredGPA, gradeToPoints } from './calculator.js';
 import { evaluatePromotionRules, evaluateDiplomaRules, getOverallStatus } from './rules.js';
 
-const STORAGE_KEY = 'spjimr-bm-cgpa-y1y2-v3';
+const STORAGE_KEY = 'spjimr-bm-cgpa-y1y2-v4';
 const byId = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
 
 // ─── State ────────────────────────────────────────────────────
@@ -230,7 +230,6 @@ function renderSummary() {
   const y1 = year1Result();
   const y2 = year2Result();
   const all = combine([y1, y2]);
-  const ncl = nclHonoursResult();
 
   return `
     ${renderYear1Shortcut()}
@@ -241,9 +240,9 @@ function renderSummary() {
       <div class="gpa-card" style="--card-color: #9C27B0">
         <div class="gpa-card-top-bar"></div>
         <div class="gpa-card-content">
-          <div class="gpa-card-title">NCL HONOURS GPA</div>
-          <div class="gpa-card-value ${ncl.hasGrades ? '' : 'gpa-pending'}">${fmt(ncl.gpa, ncl.hasGrades)}</div>
-          <div class="gpa-card-credits">SoS I, ADMAP, Abhyudaya, DoCC (§2.8 d)</div>
+          <div class="gpa-card-title">CREDITS GRADED</div>
+          <div class="gpa-card-value">${all.credits}</div>
+          <div class="gpa-card-credits">of ${DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS} (Y1 ${y1.credits} · Y2 ${y2.credits})</div>
         </div>
       </div>
     </div>
@@ -253,6 +252,7 @@ function renderSummary() {
     <div class="summary-bottom">
       <div class="side-cards">
         ${renderPlanner()}
+        ${renderHonours()}
       </div>
       <div class="side-cards">
         ${renderProbation()}
@@ -416,15 +416,46 @@ function renderPromotion() {
     </div>`;
 }
 
-function nclHonoursResult() {
+/** GPA over the courses matching `pick(course, section)` (course-grade mode only). */
+function honoursGPA(pick) {
   const courses = [];
   SECTIONS.forEach(sec => {
     const ss = state.sections[sec.id];
     if (ss.directMode || (sec.year === 1 && state.y1Shortcut.on)) return;
-    ss.courses.forEach(c => { if (c.honoursNcl) courses.push({ credits: num(c.credits) || 0, grade: c.grade }); });
+    ss.courses.forEach(c => { if (pick(c, sec)) courses.push({ credits: num(c.credits) || 0, grade: c.grade }); });
   });
   const r = calcTermGPA(courses);
-  return { gpa: r.gpa, credits: r.gradedCredits, hasGrades: r.gradedCredits > 0 };
+  const listed = [];
+  SECTIONS.forEach(sec => state.sections[sec.id].courses.forEach(c => { if (pick(c, sec)) listed.push(num(c.credits) || 0); }));
+  return { gpa: r.gpa, credits: r.gradedCredits, total: listed.reduce((a, b) => a + b, 0), hasGrades: r.gradedCredits > 0 };
+}
+
+const HONOURS = [
+  { title: 'Dean’s Honor List', rule: '§2.8 b', sub: 'Core + NCL courses, both years (no focus area or electives)',
+    pick: (c, sec) => !c.focusArea && !sec.elective },
+  { title: 'Area Top 2', rule: '§2.8 c', sub: '14 Focus Area credits (Term 3 + IM courses in Term 4)',
+    pick: c => !!c.focusArea },
+  { title: 'NCL honours', rule: '§2.8 d', sub: 'SoS I, ADMAP/Start Up, Abhyudaya, DoCC',
+    pick: c => !!c.honoursNcl },
+];
+
+function nclHonoursResult() { return honoursGPA(HONOURS[2].pick); }
+
+function renderHonours() {
+  return `
+    <div class="info-card" style="--card-color:#9C27B0">
+      <h3>🏅 Academic honours GPAs</h3>
+      <p class="info-sub">The GPAs §2.8 uses to rank honours. Only courses with grades count.${state.y1Shortcut.on ? ' Year 1 courses are left out while Year 1 CGPA is entered directly.' : ''}</p>
+      <div class="honours-grid">
+        ${HONOURS.map(h => { const r = honoursGPA(h.pick); return `
+          <div class="honour ${r.hasGrades ? '' : 'is-pending'}">
+            <div class="honour-title">${h.title} <span>${h.rule}</span></div>
+            <div class="honour-value">${fmt(r.gpa, r.hasGrades)}</div>
+            <div class="honour-sub">${h.sub}</div>
+            <div class="honour-sub">${r.credits} of ${r.total} credits graded</div>
+          </div>`; }).join('')}
+      </div>
+    </div>`;
 }
 
 function renderRules(rules) {

@@ -22,7 +22,7 @@ Built on [Savio Jiji's Year 1 calculator](https://github.com/Saviojiji/CGPA-CALC
 | ⚠️ **Probation flag (2.6)** | Warns if any term GPA is below 2.4 |
 | 📝 **NCL as per guidelines** | Year 1 NCL (Comp Exam 1, ADMAP/Start Up 2, Abhyudaya 2) and Year 2 NCL (Summer Internship 2, DoCC 4, ARI 2) count in CGPA; F/D limits include NCL grades |
 | 🔢 **Table 9 absolute grading** | Type your marks % for ADMAP, Abhyudaya or DoCC and the grade is set from the absolute bands |
-| 🏅 **NCL honours GPA (2.8 d)** | GPA over Science of Spirituality I, ADMAP/Start Up, Abhyudaya and DoCC |
+| 🏅 **Honours GPAs (2.8)** | Dean's Honor List core GPA (core + NCL, no focus area or electives), Area Top 2 GPA (14 Focus Area credits), NCL honours GPA (SoS I, ADMAP/Start Up, Abhyudaya, DoCC) |
 | 🎯 **Target planner** | The average you need on the remaining credits to finish at a target CGPA |
 | 💾 **Saved in your browser** | Grades stay between visits (localStorage, on that device only) |
 
@@ -31,6 +31,16 @@ Built on [Savio Jiji's Year 1 calculator](https://github.com/Saviojiji/CGPA-CALC
 | A+ | A | B+ | B | C+ | C | D | F |
 |---|---|---|---|---|---|---|---|
 | 4.0 | 3.5 | 3.0 | 2.5 | 2.0 | 1.5 | 1.0 | 0 |
+
+## 🗂️ My Term IV courses (pre-filled from Wisenet)
+
+| Group | Course | Credits |
+|---|---|---|
+| IM focus area | Agentic AI, Technology Infrastructure for the Digital Age, Transformation Through Cloud and Edge Computing | 2 each |
+| Strategy core | Business Consulting, Business and Society, Management Control Systems, Management of Change, Strategic Innovation Models, Strategic Leadership Under Uncertainty | 2 each |
+| BM core | Capitalism and Its Critics: A History (2), Systems and Design Thinking (4) | 6 |
+
+Term V core (SoS II, International Business, Ethical Aspects, Legal Aspects) is on the Term 5 tab.
 
 ## 🗂️ My Term VI electives (pre-filled)
 

@@ -35,6 +35,8 @@ export const ABSOLUTE_GRADE_RANGES = [
 // Course flags:
 //   fixed    — official course from the credit structure: name & credits locked, grade only.
 //   honoursNcl — counts toward the NCL academic honour (§2.8 d).
+//   focusArea — one of the 14 Focus Area credits (§2.8 c, Area Top 2).
+//   Section `elective` — common electives; excluded from the Dean's Honor List core GPA (§2.8 b).
 //   absolute — graded on Table 9 absolute marks bands (ADMAP, Abhyudaya, DoCC).
 //   Rules 2.10.3 / 2.11.1 count F and D grades from NCL courses too.
 export const SECTIONS = [
@@ -76,10 +78,10 @@ export const SECTIONS = [
             { name: 'Human Resource Management', credits: 1 },
             { name: 'Decision Science', credits: 2 },
             { name: 'Management Accounting', credits: 2 },
-            { name: 'Focus Area course 1', credits: 2 },
-            { name: 'Focus Area course 2', credits: 2 },
-            { name: 'Focus Area course 3', credits: 2 },
-            { name: 'Focus Area course 4', credits: 2 },
+            { name: 'Focus Area course 1', credits: 2, focusArea: true },
+            { name: 'Focus Area course 2', credits: 2, focusArea: true },
+            { name: 'Focus Area course 3', credits: 2, focusArea: true },
+            { name: 'Focus Area course 4', credits: 2, focusArea: true },
         ],
     },
     {
@@ -94,26 +96,33 @@ export const SECTIONS = [
     // ── Year 2 (59 credits) ───────────────────────────────
     {
         id: 'term4', name: 'Term 4', short: 'T4', year: 2, weeks: 16, color: '#00897B', editable: true,
-        note: 'Focus Area & Strategy courses total 18 credits. Rename the rows to your actual courses and fix credits if any course isn’t 2.',
+        note: 'Your Term IV courses from Wisenet: 3 Information Management focus-area courses + 6 Strategy Core (18 credits), plus BM core courses. Wisenet runs Systems and Design Thinking as one 4-credit course.',
         courses: [
-            ...Array.from({ length: 9 }, (_, i) => ({ name: '', placeholder: `Focus Area / Strategy course ${i + 1}`, credits: 2 })),
-            { name: 'Management and Capitalism, Past, Present & Future', credits: 2, fixed: true },
-            { name: 'Design Thinking', credits: 2, fixed: true },
+            { name: 'Agentic AI', credits: 2, when: 'IM focus area · INF554', fixed: true, focusArea: true },
+            { name: 'Technology Infrastructure for the Digital Age', credits: 2, when: 'IM focus area · INF528', fixed: true, focusArea: true },
+            { name: 'Transformation Through Cloud and Edge Computing', credits: 2, when: 'IM focus area · INF529', fixed: true, focusArea: true },
+            { name: 'Business Consulting', credits: 2, when: 'Strategy core · STR544', fixed: true },
+            { name: 'Business and Society', credits: 2, when: 'Strategy core · STR520', fixed: true },
+            { name: 'Management Control Systems', credits: 2, when: 'Strategy core · ACC520', fixed: true },
+            { name: 'Management of Change', credits: 2, when: 'Strategy core · OLS541', fixed: true },
+            { name: 'Strategic Innovation Models', credits: 2, when: 'Strategy core · STR539', fixed: true },
+            { name: 'Strategic Leadership Under Uncertainty', credits: 2, when: 'Strategy core · STR538', fixed: true },
+            { name: 'Capitalism and Its Critics: A History', credits: 2, when: 'BM core · OLS524', fixed: true },
+            { name: 'Systems and Design Thinking', credits: 4, when: 'BM core · STR537', fixed: true },
         ],
     },
     {
         id: 'term5', name: 'Term 5', short: 'T5', year: 2, weeks: 15, color: '#F9A825',
-        note: 'Common electives taken in Term V are counted in Term VI, so enter them on the Term 6 tab.',
+        note: 'Term V core courses per the credit structure (Systems Thinking is graded with Design Thinking on the Term 4 tab). Common electives taken in Term V count in Term VI, so they are on the Term 6 tab.',
         courses: [
-            { name: 'Science of Spirituality II', credits: 1 },
-            { name: 'International Business', credits: 2 },
-            { name: 'Ethical Aspects of Business', credits: 2 },
-            { name: 'Legal Aspects of Business', credits: 2 },
-            { name: 'Systems Thinking using System Dynamics', credits: 2 },
+            { name: 'Science of Spirituality II', credits: 1, when: 'OLS527' },
+            { name: 'International Business', credits: 2, when: 'STR505' },
+            { name: 'Ethical Aspects of Business', credits: 2, when: 'OLS507' },
+            { name: 'Legal Aspects of Business', credits: 2, when: 'STR531' },
         ],
     },
     {
-        id: 'term6', name: 'Term 6', short: 'T6', year: 2, weeks: 13, color: '#E53935', editable: true,
+        id: 'term6', name: 'Term 6', short: 'T6', year: 2, weeks: 13, color: '#E53935', editable: true, elective: true,
         note: 'Your allotted common electives (14 credits). Common electives done in Term V count in Term VI. The credit structure lists Term VI as 20 credits, so add rows here if more courses get added. MOOC credits are not counted in CGPA.',
         courses: [
             { name: 'Generative AI for Business', credits: 2, when: 'T5 · Nov–Dec' },
