@@ -30,6 +30,18 @@ Built on [Savio Jiji's Year 1 calculator](https://github.com/Saviojiji/CGPA-CALC
 |---|---|---|---|---|---|---|---|
 | 4.0 | 3.5 | 3.0 | 2.5 | 2.0 | 1.5 | 1.0 | 0 |
 
+## 🗂️ My Term VI electives (pre-filled)
+
+Focus area: Information Management & Analytics · INTEX/GFT: none · 14 elective credits
+
+| When | Course | Credits |
+|---|---|---|
+| Term V · Nov–Dec | Generative AI for Business | 2 |
+| Term VI · Jan | Sales Operations, Behavioral Decision Theory, Creative Thinking for Innovation | 2 each |
+| Term VI · Mar | Fortunes and Fiascos, Investing in Equities, International Marketing | 2 each |
+
+Using a different set? Edit the rows on the Term 6 tab, or change `term6` in `src/data.js`.
+
 ## 🧮 Year 2 credit structure
 
 | Term | Courses | Credits |

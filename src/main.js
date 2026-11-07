@@ -7,7 +7,7 @@ import { SECTIONS, YEAR1_IDS, YEAR2_IDS, GRADE_SCALE, DEFAULT_YEAR1_CREDITS, DEF
 import { calcTermGPA, countGrades, requiredGPA, gradeToPoints } from './calculator.js';
 import { evaluatePromotionRules, evaluateDiplomaRules, getOverallStatus } from './rules.js';
 
-const STORAGE_KEY = 'spjimr-bm-cgpa-y1y2-v2';
+const STORAGE_KEY = 'spjimr-bm-cgpa-y1y2-v3';
 const byId = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
 
 // ─── State ────────────────────────────────────────────────────
@@ -562,6 +562,7 @@ function renderCourseTable(def, ss) {
                 ${rowEd
       ? `<input type="text" class="cell-input" placeholder="${esc(c.placeholder || 'Course name')}" value="${esc(c.name)}" data-field="course-name" data-section="${id}" data-i="${i}" />`
       : `${esc(c.name)}${c.optional ? ' <span class="optional-badge">Optional</span>' : ''}`}
+                ${c.when ? `<span class="when-badge">${esc(c.when)}</span>` : ''}
               </td>
               ${def.ncl ? `<td class="col-category">${esc(c.category || '')}</td>` : ''}
               <td class="col-credits">

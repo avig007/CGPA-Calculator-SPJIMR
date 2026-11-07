@@ -112,8 +112,16 @@ export const SECTIONS = [
     },
     {
         id: 'term6', name: 'Term 6', short: 'T6', year: 2, weeks: 13, color: '#E53935', editable: true,
-        note: 'INTEX / Common Electives / GFT total 20 credits, including common electives done in Term V. MOOC credits are not counted in CGPA.',
-        courses: Array.from({ length: 10 }, (_, i) => ({ name: '', placeholder: `Common elective / INTEX / GFT ${i + 1}`, credits: 2 })),
+        note: 'Your allotted common electives (14 credits). Common electives done in Term V count in Term VI. The credit structure lists Term VI as 20 credits, so add rows here if more courses get added. MOOC credits are not counted in CGPA.',
+        courses: [
+            { name: 'Generative AI for Business', credits: 2, when: 'T5 · Nov–Dec' },
+            { name: 'Sales Operations', credits: 2, when: 'T6 · Jan' },
+            { name: 'Behavioral Decision Theory', credits: 2, when: 'T6 · Jan' },
+            { name: 'Creative Thinking for Innovation', credits: 2, when: 'T6 · Jan' },
+            { name: 'Fortunes and Fiascos', credits: 2, when: 'T6 · Mar' },
+            { name: 'Investing in Equities', credits: 2, when: 'T6 · Mar' },
+            { name: 'International Marketing', credits: 2, when: 'T6 · Mar' },
+        ],
     },
     {
         id: 'ncl2', name: 'NCL (Year 2)', short: 'NCL-2', year: 2, color: '#6D4C41', ncl: true,
@@ -132,4 +140,4 @@ const sumCredits = ids => SECTIONS.filter(s => ids.includes(s.id))
     .reduce((t, s) => t + s.courses.reduce((a, c) => a + c.credits, 0), 0);
 
 export const DEFAULT_YEAR1_CREDITS = sumCredits(YEAR1_IDS); // 54
-export const DEFAULT_YEAR2_CREDITS = sumCredits(YEAR2_IDS); // 59
+export const DEFAULT_YEAR2_CREDITS = sumCredits(YEAR2_IDS); // 53 with your 14 elective credits (structure says 59)
