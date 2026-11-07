@@ -35,6 +35,8 @@ export const ABSOLUTE_GRADE_RANGES = [
 // Course flags:
 //   fixed    — official course from the credit structure: name & credits locked, grade only.
 //   honoursNcl — counts toward the NCL academic honour (§2.8 d).
+//   absolute — graded on Table 9 absolute marks bands (ADMAP, Abhyudaya, DoCC).
+//   Rules 2.10.3 / 2.11.1 count F and D grades from NCL courses too.
 export const SECTIONS = [
     // ── Year 1 (54 credits) ───────────────────────────────
     {
@@ -84,8 +86,8 @@ export const SECTIONS = [
         id: 'ncl1', name: 'NCL (Year 1)', short: 'NCL-1', year: 1, color: '#9C27B0', ncl: true,
         courses: [
             { name: 'Comprehensive Examination', credits: 1, category: 'Year I' },
-            { name: 'ADMAP / Start Up', credits: 2, category: 'Term II to IV · absolute grading', honoursNcl: true },
-            { name: 'Abhyudaya Mentorship', credits: 2, category: 'Term II to IV · absolute grading', honoursNcl: true },
+            { name: 'ADMAP / Start Up', credits: 2, category: 'Term II to IV', absolute: true, honoursNcl: true },
+            { name: 'Abhyudaya Mentorship', credits: 2, category: 'Term II to IV', absolute: true, honoursNcl: true },
         ],
     },
 
@@ -127,7 +129,7 @@ export const SECTIONS = [
         id: 'ncl2', name: 'NCL (Year 2)', short: 'NCL-2', year: 2, color: '#6D4C41', ncl: true,
         courses: [
             { name: 'Corporate Summer Internship', credits: 2, category: 'Year II' },
-            { name: 'Development of Corporate Citizenship (incl. SDJ) — DoCC', credits: 4, category: 'Term V · absolute grading', honoursNcl: true },
+            { name: 'Development of Corporate Citizenship (incl. SDJ) — DoCC', credits: 4, category: 'Term V', absolute: true, honoursNcl: true },
             { name: 'Applied Research Insights (ARI)', credits: 2, category: 'Term V & VI' },
         ],
     },
@@ -141,3 +143,10 @@ const sumCredits = ids => SECTIONS.filter(s => ids.includes(s.id))
 
 export const DEFAULT_YEAR1_CREDITS = sumCredits(YEAR1_IDS); // 54
 export const DEFAULT_YEAR2_CREDITS = sumCredits(YEAR2_IDS); // 53 with your 14 elective credits (structure says 59)
+
+/** Table 9: percentage → letter grade for absolute-graded courses. */
+export function absoluteGrade(pct) {
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) return null;
+    const band = ABSOLUTE_GRADE_RANGES.find(r => pct >= r.min);
+    return band ? band.grade : 'F';
+}

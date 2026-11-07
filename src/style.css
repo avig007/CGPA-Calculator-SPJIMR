@@ -1144,3 +1144,21 @@ body {
 .probation { margin-top: 0; }
 @media (max-width: 600px) { .section-note { padding: 0.75rem 1.5rem; } }
 .when-badge { display: inline-block; margin-top: 4px; font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; }
+
+/* ═══════════════ v3: Year 1 direct input strip, absolute grading ═══════════════ */
+.y1-direct {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand-blue);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.y1-direct.is-on { background: #f0f7ff; }
+.y1-direct-hint { display: block; font-size: 0.78rem; color: var(--text-secondary); font-weight: 400; }
+.y1-direct-fields { align-items: flex-end; margin-top: 0.75rem; }
+.y1-direct-fields .info-note { margin: 0 0 10px; }
+.col-grading { white-space: nowrap; }
+.pct-wrap { display: inline-block; margin-left: 6px; vertical-align: middle; }
+.pct-input { width: 92px; }

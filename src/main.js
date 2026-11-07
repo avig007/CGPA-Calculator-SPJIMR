@@ -3,7 +3,7 @@
 //  Based on Saviojiji's Year 1 calculator (MIT licence).
 // ═══════════════════════════════════════════════════════════════
 
-import { SECTIONS, YEAR1_IDS, YEAR2_IDS, GRADE_SCALE, DEFAULT_YEAR1_CREDITS, DEFAULT_YEAR2_CREDITS } from './data.js';
+import { SECTIONS, YEAR1_IDS, YEAR2_IDS, GRADE_SCALE, DEFAULT_YEAR1_CREDITS, DEFAULT_YEAR2_CREDITS, absoluteGrade } from './data.js';
 import { calcTermGPA, countGrades, requiredGPA, gradeToPoints } from './calculator.js';
 import { evaluatePromotionRules, evaluateDiplomaRules, getOverallStatus } from './rules.js';
 
@@ -46,6 +46,7 @@ function loadState() {
       if (!def.editable) {
         merged.courses = base.sections[id].courses.map((c, i) => ({
           ...c, grade: (s.courses && s.courses[i] && s.courses[i].grade) || '—',
+          pct: (s.courses && s.courses[i] && s.courses[i].pct) || '',
         }));
       }
       base.sections[id] = merged;
@@ -232,6 +233,7 @@ function renderSummary() {
   const ncl = nclHonoursResult();
 
   return `
+    ${renderYear1Shortcut()}
     <div class="summary-grid">
       ${renderGPACard('COMBINED CGPA (Y1 + Y2)', all, '#1a3a5c', `${all.credits} of ${DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS} credits graded`)}
       ${renderGPACard('YEAR 1 CGPA', y1, '#2196F3', state.y1Shortcut.on ? `${y1.credits} credits (entered directly)` : `${y1.credits} of ${DEFAULT_YEAR1_CREDITS} credits graded`)}
@@ -250,7 +252,6 @@ function renderSummary() {
 
     <div class="summary-bottom">
       <div class="side-cards">
-        ${renderYear1Shortcut()}
         ${renderPlanner()}
       </div>
       <div class="side-cards">
@@ -315,23 +316,21 @@ function renderProgression() {
 function renderYear1Shortcut() {
   const sc = state.y1Shortcut;
   return `
-    <div class="info-card" style="--card-color:#2196F3">
-      <h3>Year 1 shortcut</h3>
-      <p class="info-sub">Already know your final Year 1 CGPA? Type it in instead of re-entering every Year 1 grade.</p>
+    <div class="y1-direct ${sc.on ? 'is-on' : ''}">
       <label class="inline-toggle">
         <span class="toggle-switch">
           <input type="checkbox" data-action="y1-shortcut" ${sc.on ? 'checked' : ''} />
           <span class="toggle-slider"></span>
         </span>
-        Use my Year 1 CGPA directly
+        <span><strong>Enter Year 1 CGPA directly</strong>
+          <span class="y1-direct-hint">${sc.on ? 'Year 1 course grades are ignored while this is on.' : 'Skip the Year 1 tabs and type the CGPA from your Year 1 grade sheet.'}</span></span>
       </label>
       ${sc.on ? `
-        <div class="field-row">
+        <div class="field-row y1-direct-fields">
           <label>Year 1 CGPA <input type="number" class="field-input" min="0" max="4" step="0.01" placeholder="e.g. 3.12" data-field="y1-cgpa" value="${esc(sc.cgpa)}" /></label>
           <label>Year 1 credits <input type="number" class="field-input" min="0" step="0.5" data-field="y1-credits" value="${esc(sc.credits)}" /></label>
-        </div>
-        <p class="info-note">Year 1 is ${DEFAULT_YEAR1_CREDITS} credits (16 + 18 + 15 + 5 NCL) per the credit structure.</p>
-      ` : ''}
+          <span class="info-note">${DEFAULT_YEAR1_CREDITS} credits = 16 + 18 + 15 + 5 NCL</span>
+        </div>` : ''}
     </div>
   `;
 }
@@ -388,7 +387,7 @@ function renderPromotion() {
           <div class="promotion-icon">ℹ️</div>
           <div>
             <h3 class="promotion-title">Year 1 promotion check</h3>
-            <p class="promotion-subtitle">Turned off while you use the Year 1 shortcut. It needs course-level grades.</p>
+            <p class="promotion-subtitle">Not available while Year 1 CGPA is entered directly. It needs course grades.</p>
           </div>
         </div>
       </div>`;
@@ -480,19 +479,20 @@ function renderSection(id) {
   const ss = state.sections[id];
   const r = sectionResult(id);
 
+  const y1Strip = def.year === 1 ? renderYear1Shortcut() : '';
   if (def.year === 1 && state.y1Shortcut.on) {
-    return `
+    return `${y1Strip}
       <div class="term-detail">
         <div class="term-detail-header"><div><h2 class="term-detail-title">${def.name}</h2></div></div>
         <div class="direct-mode-message">
           <div class="direct-mode-icon">📋</div>
-          <h3>Year 1 shortcut is on</h3>
-          <p>Your Year 1 CGPA is being typed in directly on the Summary tab, so ${def.name} grades are ignored. Turn the shortcut off to use course grades.</p>
+          <h3>Year 1 CGPA is entered directly</h3>
+          <p>${def.name} course grades are ignored. Turn off the switch above to use course grades again.</p>
         </div>
       </div>`;
   }
 
-  return `
+  return `${y1Strip}
     <div class="term-detail" style="--card-color:${def.color}">
       <div class="term-detail-header">
         <div>
@@ -547,7 +547,7 @@ function renderCourseTable(def, ss) {
           <tr>
             <th class="col-num">#</th>
             <th class="col-name">Course Name</th>
-            ${def.ncl ? '<th class="col-category">Category</th>' : ''}
+            ${def.ncl ? '<th class="col-category">When</th><th class="col-grading">Grading</th>' : ''}
             <th class="col-credits">Credits</th>
             <th class="col-grade">Grade</th>
             <th class="col-points">Points</th>
@@ -564,7 +564,13 @@ function renderCourseTable(def, ss) {
       : `${esc(c.name)}${c.optional ? ' <span class="optional-badge">Optional</span>' : ''}`}
                 ${c.when ? `<span class="when-badge">${esc(c.when)}</span>` : ''}
               </td>
-              ${def.ncl ? `<td class="col-category">${esc(c.category || '')}</td>` : ''}
+              ${def.ncl ? `<td class="col-category">${esc(c.category || '')}</td>
+              <td class="col-grading">${c.absolute
+        ? `<span class="grading-badge absolute">Absolute</span>
+           <label class="pct-wrap" title="Your marks % — converted with Table 9">
+             <input type="number" class="cell-input pct-input" min="0" max="100" step="0.01" placeholder="marks %"
+               value="${esc(c.pct ?? '')}" data-action="pct" data-section="${id}" data-i="${i}" /></label>`
+        : `<span class="grading-badge">Letter grade</span>`}</td>` : ''}
               <td class="col-credits">
                 ${rowEd
       ? `<input type="number" class="cell-input cell-num" min="0" step="0.5" value="${esc(c.credits)}" data-field="course-credits" data-section="${id}" data-i="${i}" />`
@@ -641,7 +647,15 @@ app.addEventListener('change', e => {
   const action = t.dataset.action;
   if (!action) return;
   if (action === 'grade') {
-    state.sections[t.dataset.section].courses[+t.dataset.i].grade = t.value;
+    const c = state.sections[t.dataset.section].courses[+t.dataset.i];
+    c.grade = t.value;
+    if (c.absolute) c.pct = '';   // a hand-picked grade overrides the marks %
+    render();
+  } else if (action === 'pct') {
+    const c = state.sections[t.dataset.section].courses[+t.dataset.i];
+    c.pct = t.value;
+    const g = absoluteGrade(num(t.value));
+    c.grade = t.value === '' ? '—' : (g || c.grade);
     render();
   } else if (action === 'direct-mode') {
     state.sections[t.dataset.section].directMode = t.checked;

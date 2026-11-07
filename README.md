@@ -15,11 +15,13 @@ Built on [Savio Jiji's Year 1 calculator](https://github.com/Saviojiji/CGPA-CALC
 | 📚 **Official credit structure** | All courses from §1.2.5 of the General Guidelines: Year 1 = 54 credits, Year 2 = 59 credits (113 counted in CGPA; MOOC excluded) |
 | 📈 **Three cumulative views** | Year 1 cumulative (T1 → NCL-1), Year 2 cumulative (T4 → NCL-2), and both years combined, term by term |
 | ✏️ **Your own electives** | Term 4 Focus Area/Strategy rows and Term 6 INTEX/Common Elective/GFT rows can be renamed, re-credited, added or removed |
-| ⚡ **Year 1 shortcut** | Type your final Year 1 CGPA instead of re-entering every grade |
+| ⚡ **Year 1 CGPA direct input** | Switch at the top of Summary and every Year 1 tab: type your Year 1 CGPA + credits instead of every grade |
 | 🔄 **Direct GPA input** | Enter any term as GPA × credits straight from your grade sheet |
 | ✅ **Promotion check (2.10)** | Term 1 ≥ 2.4, Comp Exam not F, Year 1 CGPA ≥ 2.4, F/D limits |
 | 🎓 **Diploma check (2.11)** | Year 1 ≥ 2.4, Year 2 ≥ 2.4, combined ≥ 2.4, max 1 F and 3 Ds (1 D if an F) in Year 2 |
 | ⚠️ **Probation flag (2.6)** | Warns if any term GPA is below 2.4 |
+| 📝 **NCL as per guidelines** | Year 1 NCL (Comp Exam 1, ADMAP/Start Up 2, Abhyudaya 2) and Year 2 NCL (Summer Internship 2, DoCC 4, ARI 2) count in CGPA; F/D limits include NCL grades |
+| 🔢 **Table 9 absolute grading** | Type your marks % for ADMAP, Abhyudaya or DoCC and the grade is set from the absolute bands |
 | 🏅 **NCL honours GPA (2.8 d)** | GPA over Science of Spirituality I, ADMAP/Start Up, Abhyudaya and DoCC |
 | 🎯 **Target planner** | The average you need on the remaining credits to finish at a target CGPA |
 | 💾 **Saved in your browser** | Grades stay between visits (localStorage, on that device only) |
