@@ -150,65 +150,123 @@ function gradedCoursesIn(ids) {
 // ─── Rendering ────────────────────────────────────────────────
 const app = document.getElementById('app');
 
-function render() {
-  const overall = overallResult();
+/** A CSS selector that finds "the same" control again after a re-render. */
+function focusKey(el) {
+  if (!el || !el.dataset || el === document.body) return null;
+  const keys = ['tab', 'action', 'field', 'section', 'i'].filter(k => el.dataset[k] !== undefined);
+  if (!keys.length) return null;
+  return keys.map(k => `[data-${k}="${el.dataset[k]}"]`).join('');
+}
+
+function render(focusSelector) {
   const tab = state.activeTab;
+  const key = focusSelector !== undefined ? focusSelector : focusKey(document.activeElement);
+  const scrollY = window.scrollY;
   app.innerHTML = `
-    ${renderHeader(overall)}
-    <main class="main-content">
+    ${renderHeader()}
+    <main class="main-content" id="main" tabindex="-1">
       ${renderTabs()}
-      <div class="tab-content">
+      <div class="tab-content" id="panel" role="tabpanel" aria-labelledby="tab-${tab}">
         ${tab === 'summary' ? renderSummary() : renderSection(tab)}
       </div>
     </main>
     <footer class="footer">
       <span>SPJIMR PGDM(BM) 2025-27 • Academic Tracker (Year 1 + Year 2) • Your grades stay in this browser</span>
-      <a href="https://github.com/Saviojiji/CGPA-CALCULATOR-YEAR-1-SPJIMR" target="_blank" rel="noopener" class="footer-star-link">Year 1 calculator by Savio Jiji ⭐</a>
+      <a href="https://github.com/Saviojiji/CGPA-CALCULATOR-YEAR-1-SPJIMR" target="_blank" rel="noopener" class="footer-star-link">Year 1 calculator by Savio Jiji<span class="sr-only"> (opens in a new tab)</span></a>
+      <span class="footer-note">Unofficial tool. Your grade sheet and the Programme Office have the final word.</span>
     </footer>
   `;
+  if (key) {
+    const el = app.querySelector(key);
+    if (el) { el.focus({ preventScroll: true }); window.scrollTo(0, scrollY); }
+  }
   save();
+  announce();
 }
 
-function renderHeader(overall) {
+// Screen-reader announcement of the CGPA and verdict, after typing settles.
+let announceTimer = null, lastAnnounced = '';
+function announce() {
+  clearTimeout(announceTimer);
+  announceTimer = setTimeout(() => {
+    const live = document.getElementById('sr-status');
+    if (!live) return;
+    const all = overallResult(), v = verdict();
+    const msg = `Combined CGPA ${all.hasGrades ? all.gpa.toFixed(2) : 'not available yet'}. Verdict: ${v.label.toLowerCase()}.`;
+    if (msg !== lastAnnounced) { live.textContent = msg; lastAnnounced = msg; }
+  }, 900);
+}
+
+function renderHeader() {
   return `
     <header class="header">
       <div class="header-inner">
         <div class="header-brand">
-          <div class="header-logo">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div class="header-logo" aria-hidden="true">
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
               <rect width="36" height="36" rx="8" fill="rgba(255,255,255,0.15)"/>
               <path d="M10 18c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
               <path d="M18 14v4l3 3" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <div>
+          <h1 class="header-h1">
             <span class="header-title">Academic </span><span class="header-title-bold">Tracker</span>
-            <span class="header-year-pill">Year 1 + 2</span>
-          </div>
-        </div>
-        <div class="header-cgpa">
-          <div class="header-cgpa-label">COMBINED CGPA</div>
-          <div class="header-cgpa-value" data-live="header-cgpa">${overall.gpa.toFixed(2)}</div>
+            <span class="header-year-pill">PGDM(BM) · Year 1 + 2</span>
+          </h1>
         </div>
       </div>
     </header>
+    <div class="tracker" data-live="tracker" aria-label="Live CGPA tracker" role="region">${trackerHTML()}</div>
   `;
 }
 
+const VERDICT_ICON = { pass: '✓', fail: '✕', 'at-risk': '!', provisional: '✓', empty: '–' };
+
+function trackerHTML() {
+  const y1 = year1Result(), y2 = year2Result(), all = combine([y1, y2]);
+  const v = verdict();
+  const total = DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS;
+  const pct = Math.min(100, Math.round((all.credits / total) * 100));
+  const tab = state.activeTab;
+  const term = tab !== 'summary' ? sectionResult(tab) : null;
+  const stat = (label, val, cls = '') => `
+    <div class="trk-stat ${cls}"><span class="trk-label">${label}</span><span class="trk-value">${val}</span></div>`;
+  return `
+    <div class="tracker-inner">
+      <div class="trk-verdict v-${v.key}">
+        <span class="trk-verdict-icon" aria-hidden="true">${VERDICT_ICON[v.key]}</span>
+        <span><span class="trk-label">Verdict</span><span class="trk-verdict-text">${v.label}</span></span>
+      </div>
+      ${stat('Combined CGPA', fmt(all.gpa, all.hasGrades), 'trk-main')}
+      ${stat('Year 1', fmt(y1.gpa, y1.hasGrades), term ? 'trk-year' : '')}
+      ${stat('Year 2', fmt(y2.gpa, y2.hasGrades), term ? 'trk-year' : '')}
+      ${term ? stat(`${byId[tab].name} GPA`, fmt(term.gpa, term.hasGrades), 'trk-term') : ''}
+      <div class="trk-progress">
+        <span class="trk-label">${all.credits} of ${total} credits graded</span>
+        <div class="trk-bar" role="progressbar" aria-label="Credits graded" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${all.credits}" aria-valuetext="${all.credits} of ${total} credits graded">
+          <div class="trk-bar-fill" style="width:${pct}%"></div>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderTabs() {
-  const btn = (id, label) => `
-    <button class="tab-btn ${state.activeTab === id ? 'active' : ''}" data-tab="${id}" role="tab"
-      aria-selected="${state.activeTab === id}">${label}</button>`;
+  const btn = (id, label, full) => `
+    <button class="tab-btn ${state.activeTab === id ? 'active' : ''}" data-tab="${id}" role="tab" id="tab-${id}"
+      aria-controls="panel" aria-selected="${state.activeTab === id}" tabindex="${state.activeTab === id ? 0 : -1}"
+      ${full ? `aria-label="${full}"` : ''}>${label}</button>`;
   const y1 = SECTIONS.filter(s => s.year === 1);
   const y2 = SECTIONS.filter(s => s.year === 2);
   const short = s => s.ncl ? 'NCL' : s.name;
   return `
-    <nav class="tabs" role="tablist">
-      ${btn('summary', 'Summary')}
-      <span class="tab-group-label">Y1</span>
-      ${y1.map(s => btn(s.id, short(s))).join('')}
-      <span class="tab-group-label">Y2</span>
-      ${y2.map(s => btn(s.id, short(s))).join('')}
+    <nav class="tabs-nav" aria-label="Sections">
+      <div class="tabs" role="tablist" aria-label="Summary and terms" data-tablist>
+        ${btn('summary', 'Summary')}
+        <span class="tab-group-label" aria-hidden="true">Year 1</span>
+        ${y1.map(s => btn(s.id, short(s), `Year 1 ${s.name}`)).join('')}
+        <span class="tab-group-label" aria-hidden="true">Year 2</span>
+        ${y2.map(s => btn(s.id, short(s), `Year 2 ${s.name}`)).join('')}
+      </div>
     </nav>
   `;
 }
@@ -218,8 +276,8 @@ function renderGPACard(title, r, color, sub) {
     <div class="gpa-card" style="--card-color: ${color}">
       <div class="gpa-card-top-bar"></div>
       <div class="gpa-card-content">
-        <div class="gpa-card-title">${title}</div>
-        <div class="gpa-card-value ${r.hasGrades ? '' : 'gpa-pending'}">${fmt(r.gpa, r.hasGrades)}</div>
+        <h3 class="gpa-card-title">${title}</h3>
+        <div class="gpa-card-value ${r.hasGrades ? '' : 'gpa-pending'}">${r.hasGrades ? r.gpa.toFixed(2) : '<span aria-hidden="true">—</span><span class="sr-only">No grades yet</span>'}</div>
         <div class="gpa-card-credits">${sub ?? `${r.credits} graded credits`}</div>
       </div>
     </div>
@@ -232,6 +290,8 @@ function renderSummary() {
   const all = combine([y1, y2]);
 
   return `
+    <h2 class="sr-only">Summary</h2>
+    ${renderVerdict()}
     ${renderYear1Shortcut()}
     <div class="summary-grid">
       ${renderGPACard('COMBINED CGPA (Y1 + Y2)', all, '#1a3a5c', `${all.credits} of ${DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS} credits graded`)}
@@ -240,7 +300,7 @@ function renderSummary() {
       <div class="gpa-card" style="--card-color: #9C27B0">
         <div class="gpa-card-top-bar"></div>
         <div class="gpa-card-content">
-          <div class="gpa-card-title">CREDITS GRADED</div>
+          <h3 class="gpa-card-title">CREDITS GRADED</h3>
           <div class="gpa-card-value">${all.credits}</div>
           <div class="gpa-card-credits">of ${DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS} (Y1 ${y1.credits} · Y2 ${y2.credits})</div>
         </div>
@@ -251,13 +311,13 @@ function renderSummary() {
 
     <div class="summary-bottom">
       <div class="side-cards">
-        ${renderPlanner()}
-        ${renderHonours()}
-      </div>
-      <div class="side-cards">
         ${renderProbation()}
         ${renderPromotion()}
         ${renderDiploma()}
+      </div>
+      <div class="side-cards">
+        ${renderPlanner()}
+        ${renderHonours()}
       </div>
     </div>
   `;
@@ -280,7 +340,7 @@ function renderTrack(title, sub, steps, color) {
         ${steps.map(s => `
           <div class="progress-step ${s.term && !s.term.hasGrades ? 'is-pending' : ''} ${s.total ? 'is-total' : ''}">
             <div class="progress-label">${s.label}</div>
-            <div class="progress-value">${fmt(s.r.gpa, s.r.hasGrades)}</div>
+            <div class="progress-value">${s.r.hasGrades ? s.r.gpa.toFixed(2) : '<span aria-hidden="true">—</span><span class="sr-only">no grades</span>'}</div>
             <div class="progress-term">${s.note ?? (s.term ? (s.term.hasGrades ? `term ${s.term.gpa.toFixed(2)}` : 'no grades') : '')}</div>
           </div>`).join('')}
       </div>
@@ -319,16 +379,16 @@ function renderYear1Shortcut() {
     <div class="y1-direct ${sc.on ? 'is-on' : ''}">
       <label class="inline-toggle">
         <span class="toggle-switch">
-          <input type="checkbox" data-action="y1-shortcut" ${sc.on ? 'checked' : ''} />
-          <span class="toggle-slider"></span>
+          <input type="checkbox" role="switch" data-action="y1-shortcut" ${sc.on ? 'checked' : ''} />
+          <span class="toggle-slider" aria-hidden="true"></span>
         </span>
         <span><strong>Enter Year 1 CGPA directly</strong>
           <span class="y1-direct-hint">${sc.on ? 'Year 1 course grades are ignored while this is on.' : 'Skip the Year 1 tabs and type the CGPA from your Year 1 grade sheet.'}</span></span>
       </label>
       ${sc.on ? `
         <div class="field-row y1-direct-fields">
-          <label>Year 1 CGPA <input type="number" class="field-input" min="0" max="4" step="0.01" placeholder="e.g. 3.12" data-field="y1-cgpa" value="${esc(sc.cgpa)}" /></label>
-          <label>Year 1 credits <input type="number" class="field-input" min="0" step="0.5" data-field="y1-credits" value="${esc(sc.credits)}" /></label>
+          <label>Year 1 CGPA <input type="number" class="field-input" min="0" max="4" step="0.01" placeholder="e.g. 3.12" inputmode="decimal" data-field="y1-cgpa" value="${esc(sc.cgpa)}" /></label>
+          <label>Year 1 credits <input type="number" class="field-input" min="0" step="0.5" inputmode="decimal" data-field="y1-credits" value="${esc(sc.credits)}" /></label>
           <span class="info-note">${DEFAULT_YEAR1_CREDITS} credits = 16 + 18 + 15 + 5 NCL</span>
         </div>` : ''}
     </div>
@@ -374,46 +434,115 @@ function renderPlanner() {
         <label>Credits remaining <input type="number" class="field-input" min="0" step="0.5" data-field="target-remaining" placeholder="${autoRem}" value="${esc(state.target.remaining)}" /></label>
       </div>
       <p class="info-note">Leave "credits remaining" blank to use the ${autoRem} ungraded credits in your Year 2 tabs.</p>
-      <div data-live="planner">${plannerOutputHTML()}</div>
+      <div data-live="planner" role="status">${plannerOutputHTML()}</div>
     </div>
   `;
 }
 
-function renderPromotion() {
-  if (state.y1Shortcut.on) {
-    return `
-      <div class="promotion-card status-pending">
-        <div class="promotion-header">
-          <div class="promotion-icon">ℹ️</div>
-          <div>
-            <h3 class="promotion-title">Year 1 promotion check</h3>
-            <p class="promotion-subtitle">Not available while Year 1 CGPA is entered directly. It needs course grades.</p>
-          </div>
-        </div>
-      </div>`;
-  }
+function promotionRules() {
+  if (state.y1Shortcut.on) return null;
   const t1 = sectionResult('term1');
   const y1 = year1Result();
   const comp = state.sections.ncl1.courses.find(c => c.name.includes('Comprehensive'));
-  const rules = evaluatePromotionRules({
+  return evaluatePromotionRules({
     term1GPA: t1.hasGrades ? t1.gpa : null,
     cgpa: y1.hasGrades ? y1.gpa : null,
     totalCredits: y1.credits,
     compExamGrade: comp && comp.grade !== '—' ? comp.grade : null,
     gradeCounts: countGrades(gradedCoursesIn(YEAR1_IDS)),
   });
-  const st = getOverallStatus(rules);
+}
+
+function year2Total() {
+  return YEAR2_IDS.reduce((t, id) => t + sectionResult(id).listedCredits, 0);
+}
+
+function diplomaRules() {
+  const y1 = year1Result(), y2 = year2Result(), all = combine([y1, y2]);
+  return evaluateDiplomaRules({
+    y1CGPA: y1.hasGrades ? y1.gpa : null,
+    y2CGPA: y2.hasGrades ? y2.gpa : null,
+    combinedCGPA: all.hasGrades ? all.gpa : null,
+    y2GradeCounts: countGrades(gradedCoursesIn(YEAR2_IDS)),
+    y2Credits: y2.credits,
+    y2TotalCredits: year2Total(),
+  });
+}
+
+// Grade-count and exam rules can't be undone by later grades, so a breach is a final FAIL.
+// CGPA rules are only final once every credit they cover has a grade.
+const FINAL_RULES = new Set(['term1_gpa', 'comp_exam', 'max_f', 'max_d', 'incomplete', 'y2_max_f', 'y2_max_d']);
+
+function verdict() {
+  const y1 = year1Result(), y2 = year2Result();
+  const y1Listed = YEAR1_IDS.reduce((t, id) => t + sectionResult(id).listedCredits, 0);
+  const y1Complete = state.y1Shortcut.on ? y1.hasGrades : y1.credits >= y1Listed;
+  const y2Complete = y2.credits >= year2Total();
+  const rules = [...(promotionRules() || []), ...diplomaRules()];
+  const fails = rules.filter(r => r.status === 'fail');
+  const isFinal = r => FINAL_RULES.has(r.id)
+    || ((r.id === 'cgpa' || r.id === 'y1') && y1Complete)
+    || ((r.id === 'y2' || r.id === 'combined') && y1Complete && y2Complete);
+  const finalFails = fails.filter(isFinal);
+  const reasons = fails.map(r => `${r.label} (${r.detail})`);
+
+  if (finalFails.length) return { key: 'fail', label: 'FAIL', reasons,
+    text: 'At least one rule is broken and later grades can’t fix it. Rule 2.4 allows a retest in some cases, so talk to the Programme Office.' };
+  if (fails.length) return { key: 'at-risk', label: 'FAILING SO FAR', reasons,
+    text: 'Based on the grades entered so far, you would not meet the rules below. Grades still to come can change this.' };
+  if (y1Complete && y2Complete && (y1.hasGrades || y2.hasGrades)) return { key: 'pass', label: 'PASS', reasons: [],
+    text: 'Every credit is graded and you meet all the promotion and diploma rules.' };
+  if (y1.hasGrades || y2.hasGrades) return { key: 'provisional', label: 'PASSING SO FAR', reasons: [],
+    text: `No rule is broken by the grades entered so far. ${y1Complete ? 'Year 1 is complete.' : 'Year 1 still has ungraded credits.'} ${y2Complete ? 'Year 2 is complete.' : 'Year 2 still has ungraded credits.'}` };
+  return { key: 'empty', label: 'NO GRADES YET', reasons: [],
+    text: 'Enter grades on the term tabs, or switch on Year 1 direct input, to get a verdict.' };
+}
+
+function renderVerdict() {
+  const v = verdict();
   return `
-    <div class="promotion-card status-${st}">
+    <section class="verdict-hero v-${v.key}" aria-labelledby="verdict-title">
+      <div class="verdict-badge" aria-hidden="true">${VERDICT_ICON[v.key]}</div>
+      <div class="verdict-body">
+        <p class="verdict-kicker">Overall verdict · Rules 2.10 &amp; 2.11</p>
+        <h2 id="verdict-title" class="verdict-title">${v.label}</h2>
+        <p class="verdict-text">${v.text}</p>
+        ${v.reasons.length ? `<ul class="verdict-reasons">${v.reasons.map(r => `<li>${r}</li>`).join('')}</ul>` : ''}
+      </div>
+    </section>`;
+}
+
+function statusCard(title, subtitle, rules, icon) {
+  const st = getOverallStatus(rules);
+  const word = st === 'on-track' ? 'All met' : st === 'at-risk' ? 'Not met' : 'In progress';
+  return `
+    <section class="promotion-card status-${st}" aria-label="${title}">
       <div class="promotion-header">
-        <div class="promotion-icon">${st === 'on-track' ? '✅' : st === 'at-risk' ? '⚠️' : '⏳'}</div>
+        <div class="promotion-icon" aria-hidden="true">${st === 'on-track' ? icon : st === 'at-risk' ? '⚠️' : '⏳'}</div>
         <div>
-          <h3 class="promotion-title">Year 1 promotion check</h3>
-          <p class="promotion-subtitle">Rule 2.10: promotion to second year</p>
+          <h3 class="promotion-title">${title} <span class="status-pill s-${st}">${word}</span></h3>
+          <p class="promotion-subtitle">${subtitle}</p>
         </div>
       </div>
       ${renderRules(rules)}
-    </div>`;
+    </section>`;
+}
+
+function renderPromotion() {
+  const rules = promotionRules();
+  if (!rules) {
+    return `
+      <section class="promotion-card status-pending" aria-label="Year 1 promotion check">
+        <div class="promotion-header">
+          <div class="promotion-icon" aria-hidden="true">ℹ️</div>
+          <div>
+            <h3 class="promotion-title">Year 1 promotion check</h3>
+            <p class="promotion-subtitle">Not available while Year 1 CGPA is entered directly. It needs course grades.</p>
+          </div>
+        </div>
+      </section>`;
+  }
+  return statusCard('Year 1 promotion check', 'Rule 2.10: promotion to second year', rules, '✅');
 }
 
 /** GPA over the courses matching `pick(course, section)` (course-grade mode only). */
@@ -459,38 +588,18 @@ function renderHonours() {
 }
 
 function renderRules(rules) {
-  return `<div class="rules-list">
+  const word = { pass: 'Met', fail: 'Not met', pending: 'Pending' };
+  return `<ul class="rules-list">
     ${rules.map(r => `
-      <div class="rule-item rule-${r.status}">
-        <span class="rule-icon">${r.status === 'pass' ? '✅' : r.status === 'fail' ? '❌' : '⏳'}</span>
-        <div><div class="rule-label">${r.label}</div><div class="rule-detail">${r.detail}</div></div>
-      </div>`).join('')}
-  </div>`;
+      <li class="rule-item rule-${r.status}">
+        <span class="rule-icon" aria-hidden="true">${r.status === 'pass' ? '✅' : r.status === 'fail' ? '❌' : '⏳'}</span>
+        <div><div class="rule-label"><span class="sr-only">${word[r.status]}: </span>${r.label}</div><div class="rule-detail">${r.detail}</div></div>
+      </li>`).join('')}
+  </ul>`;
 }
 
 function renderDiploma() {
-  const y1 = year1Result(), y2 = year2Result(), all = combine([y1, y2]);
-  const y2Total = YEAR2_IDS.reduce((t, id) => t + sectionResult(id).listedCredits, 0);
-  const rules = evaluateDiplomaRules({
-    y1CGPA: y1.hasGrades ? y1.gpa : null,
-    y2CGPA: y2.hasGrades ? y2.gpa : null,
-    combinedCGPA: all.hasGrades ? all.gpa : null,
-    y2GradeCounts: countGrades(gradedCoursesIn(YEAR2_IDS)),
-    y2Credits: y2.credits,
-    y2TotalCredits: y2Total,
-  });
-  const st = getOverallStatus(rules);
-  return `
-    <div class="promotion-card status-${st}">
-      <div class="promotion-header">
-        <div class="promotion-icon">${st === 'on-track' ? '🎓' : st === 'at-risk' ? '⚠️' : '⏳'}</div>
-        <div>
-          <h3 class="promotion-title">Diploma eligibility</h3>
-          <p class="promotion-subtitle">Rule 2.11: award of diploma</p>
-        </div>
-      </div>
-      ${renderRules(rules)}
-    </div>`;
+  return statusCard('Diploma eligibility', 'Rule 2.11: award of diploma', diplomaRules(), '🎓');
 }
 
 function renderProbation() {
@@ -499,7 +608,7 @@ function renderProbation() {
     .filter(x => x.r.hasGrades && x.r.gpa < 2.4);
   if (!low.length) return '';
   return `
-    <div class="planner-out bad probation">
+    <div class="planner-out bad probation" role="note">
       <strong>Academic probation (Rule 2.6):</strong> term GPA below 2.4 in
       ${low.map(x => `${x.sec.name} (${x.r.gpa.toFixed(2)})`).join(', ')}.
     </div>`;
@@ -516,7 +625,7 @@ function renderSection(id) {
       <div class="term-detail">
         <div class="term-detail-header"><div><h2 class="term-detail-title">${def.name}</h2></div></div>
         <div class="direct-mode-message">
-          <div class="direct-mode-icon">📋</div>
+          <div class="direct-mode-icon" aria-hidden="true">📋</div>
           <h3>Year 1 CGPA is entered directly</h3>
           <p>${def.name} course grades are ignored. Turn off the switch above to use course grades again.</p>
         </div>
@@ -529,32 +638,36 @@ function renderSection(id) {
         <div>
           <h2 class="term-detail-title">${def.name}</h2>
           <span class="credit-badge" data-live="credit-badge">${r.listedCredits} Credits</span>
+          <span class="year-tag">Year ${def.year}</span>
           ${def.weeks ? `<span class="term-detail-subtitle">• ${def.weeks}-week term</span>` : ''}
         </div>
-        <div class="gpa-display-box" data-live="section-gpa">GPA: ${fmt(r.gpa, r.hasGrades)}</div>
+        <div class="gpa-display-box" data-live="section-gpa" aria-label="${def.name} GPA">GPA: ${fmt(r.gpa, r.hasGrades)}</div>
       </div>
       ${def.note ? `<div class="section-note">${def.note}</div>` : ''}
 
       <div class="input-mode-toggle">
-        <label class="toggle-switch">
-          <input type="checkbox" ${ss.directMode ? 'checked' : ''} data-action="direct-mode" data-section="${id}" />
-          <span class="toggle-slider"></span>
+        <label class="inline-toggle">
+          <span class="toggle-switch">
+            <input type="checkbox" role="switch" ${ss.directMode ? 'checked' : ''} data-action="direct-mode" data-section="${id}" aria-describedby="dm-hint-${id}" />
+            <span class="toggle-slider" aria-hidden="true"></span>
+          </span>
+          <span class="toggle-label">Direct GPA input for ${def.name}</span>
         </label>
-        <span class="toggle-label">Direct GPA input <span class="toggle-hint">(type the term GPA from your grade sheet)</span></span>
+        <span class="toggle-hint" id="dm-hint-${id}">Type the term GPA and credits from your grade sheet instead of course grades.</span>
         ${ss.directMode ? `
           <div class="direct-gpa-input-wrapper">
-            <label>GPA</label>
-            <input type="number" class="direct-gpa-input" min="0" max="4" step="0.01" placeholder="0.00"
-              value="${esc(ss.directGPA)}" data-field="direct-gpa" data-section="${id}" />
-            <label>Credits</label>
-            <input type="number" class="direct-gpa-input" min="0" step="0.5"
-              value="${esc(ss.directCredits)}" data-field="direct-credits" data-section="${id}" />
+            <label>GPA
+              <input type="number" class="direct-gpa-input" min="0" max="4" step="0.01" placeholder="0.00" inputmode="decimal"
+                value="${esc(ss.directGPA)}" data-field="direct-gpa" data-section="${id}" /></label>
+            <label>Credits
+              <input type="number" class="direct-gpa-input" min="0" step="0.5" inputmode="decimal"
+                value="${esc(ss.directCredits)}" data-field="direct-credits" data-section="${id}" /></label>
           </div>` : ''}
       </div>
 
       ${ss.directMode ? `
         <div class="direct-mode-message">
-          <div class="direct-mode-icon">📋</div>
+          <div class="direct-mode-icon" aria-hidden="true">📋</div>
           <h3>Course grades ignored</h3>
           <p>This term counts as one block: the GPA you typed × the credits you typed.</p>
         </div>` : renderCourseTable(def, ss)}
@@ -571,57 +684,65 @@ function pointsText(c) {
 function renderCourseTable(def, ss) {
   const id = def.id;
   const ed = !!def.editable;
+  const label = (c, i) => esc(c.name || c.placeholder || `row ${i + 1}`);
   return `
     <div class="course-table-wrapper">
       <table class="course-table">
+        <caption class="sr-only">${def.name} courses: choose a grade for each course. GPA updates as you go.</caption>
         <thead>
           <tr>
-            <th class="col-num">#</th>
-            <th class="col-name">Course Name</th>
-            ${def.ncl ? '<th class="col-category">When</th><th class="col-grading">Grading</th>' : ''}
-            <th class="col-credits">Credits</th>
-            <th class="col-grade">Grade</th>
-            <th class="col-points">Points</th>
-            ${ed ? '<th class="col-del"></th>' : ''}
+            <th scope="col" class="col-num">#</th>
+            <th scope="col" class="col-name">Course</th>
+            ${def.ncl ? '<th scope="col" class="col-category">When</th><th scope="col" class="col-grading">Grading</th>' : ''}
+            <th scope="col" class="col-credits">Credits</th>
+            <th scope="col" class="col-grade">Grade</th>
+            <th scope="col" class="col-points">Points</th>
+            ${ed ? '<th scope="col" class="col-del"><span class="sr-only">Remove</span></th>' : ''}
           </tr>
         </thead>
         <tbody>
-          ${ss.courses.map((c, i) => { const rowEd = ed && !c.fixed; return `
-            <tr class="${c.optional ? 'optional-course-row' : ''}">
+          ${ss.courses.map((c, i) => { const rowEd = ed && !c.fixed; const graded = gradeToPoints(c.grade) !== null; return `
+            <tr class="${graded ? 'is-graded' : ''}">
               <td class="col-num">${i + 1}</td>
               <td class="col-name">
                 ${rowEd
-      ? `<input type="text" class="cell-input" placeholder="${esc(c.placeholder || 'Course name')}" value="${esc(c.name)}" data-field="course-name" data-section="${id}" data-i="${i}" />`
-      : `${esc(c.name)}${c.optional ? ' <span class="optional-badge">Optional</span>' : ''}`}
+      ? `<input type="text" class="cell-input" placeholder="${esc(c.placeholder || 'Course name')}" value="${esc(c.name)}"
+           aria-label="Course name, row ${i + 1}" data-field="course-name" data-section="${id}" data-i="${i}" />`
+      : `<span class="course-name">${esc(c.name)}</span>`}
                 ${c.when ? `<span class="when-badge">${esc(c.when)}</span>` : ''}
               </td>
               ${def.ncl ? `<td class="col-category">${esc(c.category || '')}</td>
               <td class="col-grading">${c.absolute
         ? `<span class="grading-badge absolute">Absolute</span>
-           <label class="pct-wrap" title="Your marks % — converted with Table 9">
-             <input type="number" class="cell-input pct-input" min="0" max="100" step="0.01" placeholder="marks %"
-               value="${esc(c.pct ?? '')}" data-action="pct" data-section="${id}" data-i="${i}" /></label>`
+           <input type="number" class="cell-input pct-input" min="0" max="100" step="0.01" placeholder="marks %" inputmode="decimal"
+             aria-label="Marks percent for ${label(c, i)}, converts to a grade using Table 9"
+             value="${esc(c.pct ?? '')}" data-action="pct" data-section="${id}" data-i="${i}" />`
         : `<span class="grading-badge">Letter grade</span>`}</td>` : ''}
               <td class="col-credits">
                 ${rowEd
-      ? `<input type="number" class="cell-input cell-num" min="0" step="0.5" value="${esc(c.credits)}" data-field="course-credits" data-section="${id}" data-i="${i}" />`
+      ? `<input type="number" class="cell-input cell-num" min="0" step="0.5" inputmode="decimal" value="${esc(c.credits)}"
+           aria-label="Credits for ${label(c, i)}" data-field="course-credits" data-section="${id}" data-i="${i}" />`
       : c.credits}
               </td>
               <td class="col-grade">
-                <select class="grade-select" data-action="grade" data-section="${id}" data-i="${i}">
-                  ${GRADE_SCALE.map(g => `<option value="${g.label}" ${c.grade === g.label ? 'selected' : ''}>${g.label}</option>`).join('')}
+                <select class="grade-select ${graded ? 'has-grade' : ''}" aria-label="Grade for ${label(c, i)}" data-action="grade" data-section="${id}" data-i="${i}">
+                  ${GRADE_SCALE.map(g => `<option value="${g.label}" ${c.grade === g.label ? 'selected' : ''}>${g.value === null ? 'Select' : `${g.label} (${g.value.toFixed(1)})`}</option>`).join('')}
                 </select>
               </td>
               <td class="col-points" data-live="pts-${id}-${i}">${pointsText(c)}</td>
-              ${ed ? `<td class="col-del">${rowEd ? `<button class="icon-btn" title="Remove course" aria-label="Remove course" data-action="del-course" data-section="${id}" data-i="${i}">✕</button>` : ''}</td>` : ''}
+              ${ed ? `<td class="col-del">${rowEd ? `<button type="button" class="icon-btn" aria-label="Remove ${label(c, i)}" data-action="del-course" data-section="${id}" data-i="${i}"><span aria-hidden="true">✕</span></button>` : ''}</td>` : ''}
             </tr>`; }).join('')}
         </tbody>
       </table>
       ${ed ? `
         <div class="table-actions">
-          <button class="add-btn" data-action="add-course" data-section="${id}">+ Add course</button>
-          <button class="link-btn" data-action="clear-section" data-section="${id}">Clear grades in ${def.name}</button>
-        </div>` : ''}
+          <button type="button" class="add-btn" data-action="add-course" data-section="${id}">+ Add course</button>
+          <button type="button" class="link-btn" data-action="clear-section" data-section="${id}">Clear grades in ${def.name}</button>
+        </div>` : `
+        <div class="table-actions">
+          <span></span>
+          <button type="button" class="link-btn" data-action="clear-section" data-section="${id}">Clear grades in ${def.name}</button>
+        </div>`}
     </div>
   `;
 }
@@ -633,7 +754,7 @@ function setLive(key, html) {
 }
 
 function updateLive(sectionId, rowIndex) {
-  setLive('header-cgpa', overallResult().gpa.toFixed(2));
+  setLive('tracker', trackerHTML());
   if (sectionId) {
     const r = sectionResult(sectionId);
     setLive('section-gpa', `GPA: ${fmt(r.gpa, r.hasGrades)}`);
@@ -642,6 +763,7 @@ function updateLive(sectionId, rowIndex) {
   }
   setLive('planner', plannerOutputHTML());
   save();
+  announce();
 }
 
 // ─── Events (delegated, attached once) ────────────────────────
@@ -658,16 +780,18 @@ app.addEventListener('click', e => {
       { const firstFixed = ss.courses.findIndex(c => c.fixed);
         const at = firstFixed === -1 ? ss.courses.length : firstFixed;
         ss.courses.splice(at, 0, { name: '', credits: 2, grade: '—' }); }
-      render();
       { const ins = ss.courses.findIndex(c => c.fixed); const idx = (ins === -1 ? ss.courses.length : ins) - 1;
-        const el = app.querySelector(`[data-field="course-name"][data-section="${id}"][data-i="${idx}"]`); if (el) el.focus(); }
+        render(`[data-field="course-name"][data-section="${id}"][data-i="${idx}"]`); }
       return;
-    case 'del-course':
-      ss.courses.splice(+btn.dataset.i, 1);
-      render();
+    case 'del-course': {
+      const i = +btn.dataset.i;
+      ss.courses.splice(i, 1);
+      const nextI = Math.min(i, ss.courses.length - 1);
+      render(nextI >= 0 ? `[data-action="grade"][data-section="${id}"][data-i="${nextI}"]` : `[data-action="add-course"][data-section="${id}"]`);
       return;
+    }
     case 'clear-section':
-      ss.courses.forEach(c => { c.grade = '—'; });
+      ss.courses.forEach(c => { c.grade = '—'; if (c.absolute) c.pct = ''; });
       render();
       return;
   }
@@ -719,10 +843,27 @@ app.addEventListener('input', e => {
 app.addEventListener('focusout', e => {
   const f = e.target.dataset && e.target.dataset.field;
   if (state.activeTab === 'summary' && f && /^(y1-|target-)/.test(f)) {
-    const next = e.relatedTarget && e.relatedTarget.dataset && e.relatedTarget.dataset.field;
-    render();
-    if (next) { const el = app.querySelector(`[data-field="${next}"]`); if (el) el.focus(); }
+    // If focus is moving to a button/select/switch, its own action re-renders; re-rendering now would swallow the click.
+    if (e.relatedTarget && e.relatedTarget.matches('button, select, input[type="checkbox"]')) return;
+    render(focusKey(e.relatedTarget));
   }
+});
+
+// Arrow keys / Home / End move between tabs (WAI-ARIA tabs pattern).
+app.addEventListener('keydown', e => {
+  if (!e.target.closest('[data-tablist]') || !e.target.dataset.tab) return;
+  const ids = [...app.querySelectorAll('[role="tab"]')].map(b => b.dataset.tab);
+  let i = ids.indexOf(e.target.dataset.tab);
+  if (e.key === 'ArrowRight') i = (i + 1) % ids.length;
+  else if (e.key === 'ArrowLeft') i = (i - 1 + ids.length) % ids.length;
+  else if (e.key === 'Home') i = 0;
+  else if (e.key === 'End') i = ids.length - 1;
+  else return;
+  e.preventDefault();
+  state.activeTab = ids[i];
+  render(`[data-tab="${ids[i]}"]`);
+  const t = app.querySelector(`[data-tab="${ids[i]}"]`);
+  if (t) t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 });
 
 // ─── Boot ─────────────────────────────────────────────────────

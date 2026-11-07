@@ -12,6 +12,8 @@ Built on [Savio Jiji's Year 1 calculator](https://github.com/Saviojiji/CGPA-CALC
 
 | Feature | Description |
 |---|---|
+| 📍 **Live tracker** | Pinned bar on every tab: verdict, combined CGPA, Year 1, Year 2, the current term's GPA and credits graded, updating as you pick grades |
+| ⚖️ **PASS / FAIL verdict** | Combines Rules 2.10 and 2.11: **PASS**, **PASSING SO FAR**, **FAILING SO FAR** or **FAIL** (a final breach like 2 Fs, or a CGPA rule once all credits are graded) |
 | 📚 **Official credit structure** | All courses from §1.2.5 of the General Guidelines: Year 1 = 54 credits, Year 2 = 59 credits (113 counted in CGPA; MOOC excluded) |
 | 📈 **Three cumulative views** | Year 1 cumulative (T1 → NCL-1), Year 2 cumulative (T4 → NCL-2), and both years combined, term by term |
 | ✏️ **Your own electives** | Term 4 Focus Area/Strategy rows and Term 6 INTEX/Common Elective/GFT rows can be renamed, re-credited, added or removed |
@@ -25,6 +27,14 @@ Built on [Savio Jiji's Year 1 calculator](https://github.com/Saviojiji/CGPA-CALC
 | 🏅 **Honours GPAs (2.8)** | Dean's Honor List core GPA (core + NCL, no focus area or electives), Area Top 2 GPA (14 Focus Area credits), NCL honours GPA (SoS I, ADMAP/Start Up, Abhyudaya, DoCC) |
 | 🎯 **Target planner** | The average you need on the remaining credits to finish at a target CGPA |
 | 💾 **Saved in your browser** | Grades stay between visits (localStorage, on that device only) |
+
+## ♿ Accessibility
+
+- Text meets WCAG AA contrast (4.5:1) across the app
+- Every input, grade picker and button has a screen-reader label; status is shown in words, not just colour
+- Full keyboard use: skip link, visible focus rings, arrow keys between tabs, focus stays on the grade you just picked
+- CGPA and verdict changes are announced to screen readers
+- Respects "reduce motion"; touch targets are at least 36–40px
 
 ## 📖 Grade scale (Table 7)
 
