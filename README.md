@@ -4,8 +4,6 @@ A real-time CGPA calculator for **SPJIMR PGDM(BM) 2025-27** covering both years:
 
 ### 👉 [**Open the Calculator**](https://avig007.github.io/CGPA-Calculator-SPJIMR/)
 
-Built on [Savio Jiji's Year 1 calculator](https://github.com/Saviojiji/CGPA-CALCULATOR-YEAR-1-SPJIMR) (MIT).
-
 ---
 
 ## ✨ Features
