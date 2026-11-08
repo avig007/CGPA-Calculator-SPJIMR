@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    CGPA Tracker — SPJIMR PGDM(BM) 2025-27
-   Palette from the SPJIMR identity: purple wordmark, saffron/marigold strokes.
+   Palette from the SPJIMR identity: purple, with saffron and marigold accents.
    Type: Schibsted Grotesk (headings, numbers) + Figtree (interface).
    ═══════════════════════════════════════════════════════════════ */
 
@@ -136,18 +136,9 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; letter-spa
 .trk-verdict { color: var(--v); }
 .trk-verdict-icon { background: var(--v); }
 
-/* The five rising strokes */
-.credit-progress { display: flex; align-items: center; gap: 10px; }
-.strokes { width: 46px; height: 38px; flex: none; }
-.stroke-track { fill: var(--purple-wash); }
-.on-dark .stroke-track { fill: rgba(255, 255, 255, 0.16); }
-.stroke-fill.s0 { fill: #fdb813; }
-.stroke-fill.s1 { fill: #fba418; }
-.stroke-fill.s2 { fill: #f8921c; }
-.stroke-fill.s3 { fill: #f3801f; }
-.stroke-fill.s4 { fill: #ec6e21; }
-.credit-progress-text { font-size: 0.8rem; color: var(--ink-3); }
-.on-dark .credit-progress-text { color: #cdbde6; }
+/* Credits graded */
+.credit-progress-text { font-size: 0.85rem; color: var(--ink-3); }
+.on-dark .credit-progress-text { color: #cdbde6; font-weight: 500; }
 
 /* ═══════════════ Page + tabs ═══════════════ */
 .main-content { max-width: var(--page); margin: 0 auto; padding: 8px 24px 64px; }
@@ -197,8 +188,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; letter-spa
 .hero-figure-title { font-family: var(--font-ui); font-size: 0.95rem; font-weight: 600; color: var(--ink-2); letter-spacing: 0; }
 .hero-number { font-family: var(--font-display); font-size: 4.25rem; font-weight: 800; line-height: 1; color: var(--purple); letter-spacing: -0.04em; }
 .hero-number.is-empty { color: var(--ink-3); }
-.hero-figure .credit-progress { margin-top: 10px; }
-.hero-figure .strokes { width: 58px; height: 48px; }
+.hero-figure .credit-progress { margin-top: 8px; }
 
 /* Figures: three numbers in one band, divided by rules */
 .figures {
@@ -383,6 +373,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; letter-spa
   max-width: var(--page); margin: 0 auto; padding: 24px 24px 40px;
   border-top: 1px solid var(--line); font-size: 0.85rem; color: var(--ink-2);
 }
+.footer strong { color: var(--purple); font-weight: 700; }
 .footer-note { margin-top: 4px; color: var(--ink-3); }
 
 /* ═══════════════ Sign-in dialog ═══════════════ */
@@ -442,7 +433,6 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; letter-spa
   .trk-year { display: none; }
   .trk-term { padding-left: 0; border-left: 0; }
   .tracker .credit-progress { margin-left: 0; flex-basis: 100%; }
-  .tracker .strokes { width: 34px; height: 26px; }
 
   .main-content { padding: 4px 16px 48px; }
   .tabs-nav { margin: 0 -16px 20px; padding: 0 16px; }

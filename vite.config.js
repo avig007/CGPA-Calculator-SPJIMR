@@ -13,5 +13,14 @@ export default defineConfig({
   },
   build: {
     outDir: mock ? 'dist-test' : 'dist',
+    // Fixed file names (no content hashes): a browser still holding an older
+    // index.html then loads a working older script instead of a missing file.
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/app.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
+    },
   },
 });

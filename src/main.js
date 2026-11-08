@@ -271,8 +271,8 @@ function render(focusSelector) {
       </div>
     </main>
     <footer class="footer">
-      <p>An unofficial CGPA tracker for SPJIMR PGDM(BM) 2025–27, built on the batch’s General Guidelines.</p>
-      <p class="footer-note">Your grade sheet and the Programme Office have the final word.</p>
+      <p>Made by <strong>Avijeet Gupta</strong> (PGDM(BM) 2025–27) for academic purposes.</p>
+      <p class="footer-note">Not an official SPJIMR tool. It follows the batch’s General Guidelines, but your grade sheet and the Programme Office have the final word.</p>
     </footer>
   `;
   if (key) {
@@ -327,26 +327,10 @@ function accountHTML() {
 const VERDICT_ICON = { pass: '✓', fail: '✕', 'at-risk': '!', provisional: '✓', empty: '–' };
 const TOTAL_CREDITS = DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS;
 
-/**
- * Five rising strokes that fill, one after another, as credits get graded.
- * Decorative: the surrounding element carries the progressbar semantics.
- */
-function strokesSVG(fraction, cls = '') {
-  const f = Math.max(0, Math.min(1, fraction || 0));
-  const bars = [0, 1, 2, 3, 4].map(i => {
-    const h = 16 + i * 6, x = i * 10, y = 44 - h;
-    const fill = Math.max(0, Math.min(1, f * 5 - i));
-    return `<rect class="stroke-track" x="${x}" y="${y}" width="6" height="${h}" rx="3"/>` +
-      (fill > 0 ? `<rect class="stroke-fill s${i}" x="${x}" y="${(y + h * (1 - fill)).toFixed(1)}" width="6" height="${(h * fill).toFixed(1)}" rx="3"/>` : '');
-  }).join('');
-  return `<svg class="strokes ${cls}" viewBox="-6 0 56 46" aria-hidden="true" focusable="false"><g transform="skewX(-16) translate(12 0)">${bars}</g></svg>`;
-}
-
 function creditsProgress(all, cls) {
   return `
     <div class="credit-progress ${cls}" role="progressbar" aria-label="Credits graded" aria-valuemin="0"
       aria-valuemax="${TOTAL_CREDITS}" aria-valuenow="${all.credits}" aria-valuetext="${all.credits} of ${TOTAL_CREDITS} credits graded">
-      ${strokesSVG(all.credits / TOTAL_CREDITS, cls)}
       <span class="credit-progress-text">${all.credits} of ${TOTAL_CREDITS} credits graded</span>
     </div>`;
 }

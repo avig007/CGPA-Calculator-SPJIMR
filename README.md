@@ -64,9 +64,9 @@ MOCK_CLOUD=1 npx vite build      # test build with a stand-in login backend (dis
 
 Pushing to `main` publishes the site to GitHub Pages (`.github/workflows/deploy.yml`).
 
-## Disclaimer
+## About
 
-An unofficial tool. Your grade sheet and the Programme Office have the final word.
+Made by Avijeet Gupta (PGDM(BM) 2025–27) for academic purposes. Not an official SPJIMR tool. Your grade sheet and the Programme Office have the final word.
 
 ## Licence
 
