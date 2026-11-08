@@ -1,6 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-//  SPJIMR Academic Tracker — Year 1 + Year 2
-//  Based on Saviojiji's Year 1 calculator (MIT licence).
+//  CGPA Tracker for SPJIMR PGDM(BM) 2025-27 — Year 1 + Year 2
 // ═══════════════════════════════════════════════════════════════
 
 import { SECTIONS, YEAR1_IDS, YEAR2_IDS, GRADE_SCALE, DEFAULT_YEAR1_CREDITS, DEFAULT_YEAR2_CREDITS, absoluteGrade } from './data.js';
@@ -272,9 +271,8 @@ function render(focusSelector) {
       </div>
     </main>
     <footer class="footer">
-      <span>SPJIMR PGDM(BM) 2025-27 • Academic Tracker (Year 1 + Year 2) • Your grades stay in this browser</span>
-      <a href="https://github.com/Saviojiji/CGPA-CALCULATOR-YEAR-1-SPJIMR" target="_blank" rel="noopener" class="footer-star-link">Year 1 calculator by Savio Jiji<span class="sr-only"> (opens in a new tab)</span></a>
-      <span class="footer-note">Unofficial tool. Your grade sheet and the Programme Office have the final word.</span>
+      <p>An unofficial CGPA tracker for SPJIMR PGDM(BM) 2025–27, built on the batch’s General Guidelines.</p>
+      <p class="footer-note">Your grade sheet and the Programme Office have the final word.</p>
     </footer>
   `;
   if (key) {
@@ -302,19 +300,10 @@ function renderHeader() {
   return `
     <header class="header">
       <div class="header-inner">
-        <div class="header-brand">
-          <div class="header-logo" aria-hidden="true">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
-              <rect width="36" height="36" rx="8" fill="rgba(255,255,255,0.15)"/>
-              <path d="M10 18c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M18 14v4l3 3" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <h1 class="header-h1">
-            <span class="header-title">Academic </span><span class="header-title-bold">Tracker</span>
-            <span class="header-year-pill">PGDM(BM) · Year 1 + 2</span>
-          </h1>
-        </div>
+        <h1 class="brand">
+          <span class="brand-name">CGPA Tracker</span>
+          <span class="brand-sub">SPJIMR PGDM(BM) 2025–27</span>
+        </h1>
         <div class="account" aria-label="Account">${accountHTML()}</div>
       </div>
     </header>
@@ -323,9 +312,9 @@ function renderHeader() {
 }
 
 function accountHTML() {
-  if (!cloud.enabled) return `<span class="account-note">Saved on this device</span>`;
+  if (!cloud.enabled) return `<span class="account-note">Grades are saved in this browser</span>`;
   if (!account.user) {
-    return `<button type="button" class="account-btn" data-action="open-auth">Sign in to save your grades</button>`;
+    return `<button type="button" class="account-btn" data-action="open-auth">Sign in<span class="wide-only"> to save your grades</span></button>`;
   }
   return `
     <div class="account-user">
@@ -336,12 +325,35 @@ function accountHTML() {
 }
 
 const VERDICT_ICON = { pass: '✓', fail: '✕', 'at-risk': '!', provisional: '✓', empty: '–' };
+const TOTAL_CREDITS = DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS;
+
+/**
+ * Five rising strokes that fill, one after another, as credits get graded.
+ * Decorative: the surrounding element carries the progressbar semantics.
+ */
+function strokesSVG(fraction, cls = '') {
+  const f = Math.max(0, Math.min(1, fraction || 0));
+  const bars = [0, 1, 2, 3, 4].map(i => {
+    const h = 16 + i * 6, x = i * 10, y = 44 - h;
+    const fill = Math.max(0, Math.min(1, f * 5 - i));
+    return `<rect class="stroke-track" x="${x}" y="${y}" width="6" height="${h}" rx="3"/>` +
+      (fill > 0 ? `<rect class="stroke-fill s${i}" x="${x}" y="${(y + h * (1 - fill)).toFixed(1)}" width="6" height="${(h * fill).toFixed(1)}" rx="3"/>` : '');
+  }).join('');
+  return `<svg class="strokes ${cls}" viewBox="-6 0 56 46" aria-hidden="true" focusable="false"><g transform="skewX(-16) translate(12 0)">${bars}</g></svg>`;
+}
+
+function creditsProgress(all, cls) {
+  return `
+    <div class="credit-progress ${cls}" role="progressbar" aria-label="Credits graded" aria-valuemin="0"
+      aria-valuemax="${TOTAL_CREDITS}" aria-valuenow="${all.credits}" aria-valuetext="${all.credits} of ${TOTAL_CREDITS} credits graded">
+      ${strokesSVG(all.credits / TOTAL_CREDITS, cls)}
+      <span class="credit-progress-text">${all.credits} of ${TOTAL_CREDITS} credits graded</span>
+    </div>`;
+}
 
 function trackerHTML() {
   const y1 = year1Result(), y2 = year2Result(), all = combine([y1, y2]);
   const v = verdict();
-  const total = DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS;
-  const pct = Math.min(100, Math.round((all.credits / total) * 100));
   const tab = state.activeTab;
   const term = tab !== 'summary' ? sectionResult(tab) : null;
   const stat = (label, val, cls = '') => `
@@ -350,18 +362,13 @@ function trackerHTML() {
     <div class="tracker-inner">
       <div class="trk-verdict v-${v.key}">
         <span class="trk-verdict-icon" aria-hidden="true">${VERDICT_ICON[v.key]}</span>
-        <span><span class="trk-label">Verdict</span><span class="trk-verdict-text">${v.label}</span></span>
+        <span class="trk-verdict-text"><span class="sr-only">Verdict: </span>${v.label}</span>
       </div>
       ${stat('Combined CGPA', fmt(all.gpa, all.hasGrades), 'trk-main')}
       ${stat('Year 1', fmt(y1.gpa, y1.hasGrades), term ? 'trk-year' : '')}
       ${stat('Year 2', fmt(y2.gpa, y2.hasGrades), term ? 'trk-year' : '')}
       ${term ? stat(`${byId[tab].name} GPA`, fmt(term.gpa, term.hasGrades), 'trk-term') : ''}
-      <div class="trk-progress">
-        <span class="trk-label">${all.credits} of ${total} credits graded</span>
-        <div class="trk-bar" role="progressbar" aria-label="Credits graded" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${all.credits}" aria-valuetext="${all.credits} of ${total} credits graded">
-          <div class="trk-bar-fill" style="width:${pct}%"></div>
-        </div>
-      </div>
+      ${creditsProgress(all, 'on-dark')}
     </div>`;
 }
 
@@ -370,67 +377,58 @@ function renderTabs() {
     <button class="tab-btn ${state.activeTab === id ? 'active' : ''}" data-tab="${id}" role="tab" id="tab-${id}"
       aria-controls="panel" aria-selected="${state.activeTab === id}" tabindex="${state.activeTab === id ? 0 : -1}"
       ${full ? `aria-label="${full}"` : ''}>${label}</button>`;
-  const y1 = SECTIONS.filter(s => s.year === 1);
-  const y2 = SECTIONS.filter(s => s.year === 2);
   const short = s => s.ncl ? 'NCL' : s.name;
+  const group = (year, list) => `
+    <span class="tab-group" role="presentation">
+      <span class="tab-group-label" aria-hidden="true">Year ${year}</span>
+      ${list.map(s => btn(s.id, short(s), `Year ${year} ${s.name}`)).join('')}
+    </span>`;
   return `
     <nav class="tabs-nav" aria-label="Sections">
       <div class="tabs" role="tablist" aria-label="Summary and terms" data-tablist>
         ${btn('summary', 'Summary')}
-        <span class="tab-group-label" aria-hidden="true">Year 1</span>
-        ${y1.map(s => btn(s.id, short(s), `Year 1 ${s.name}`)).join('')}
-        <span class="tab-group-label" aria-hidden="true">Year 2</span>
-        ${y2.map(s => btn(s.id, short(s), `Year 2 ${s.name}`)).join('')}
+        ${group(1, SECTIONS.filter(s => s.year === 1))}
+        ${group(2, SECTIONS.filter(s => s.year === 2))}
       </div>
     </nav>
   `;
 }
 
-function renderGPACard(title, r, color, sub) {
+function figure(title, r, note) {
   return `
-    <div class="gpa-card" style="--card-color: ${color}">
-      <div class="gpa-card-top-bar"></div>
-      <div class="gpa-card-content">
-        <h3 class="gpa-card-title">${title}</h3>
-        <div class="gpa-card-value ${r.hasGrades ? '' : 'gpa-pending'}">${r.hasGrades ? r.gpa.toFixed(2) : '<span aria-hidden="true">—</span><span class="sr-only">No grades yet</span>'}</div>
-        <div class="gpa-card-credits">${sub ?? `${r.credits} graded credits`}</div>
-      </div>
-    </div>
-  `;
+    <div class="figure">
+      <h3 class="figure-title">${title}</h3>
+      <p class="figure-value ${r.hasGrades ? '' : 'is-empty'}">${r.hasGrades ? r.gpa.toFixed(2) : '<span aria-hidden="true">—</span><span class="sr-only">No grades yet</span>'}</p>
+      <p class="figure-note">${note}</p>
+    </div>`;
 }
 
 function renderSummary() {
   const y1 = year1Result();
   const y2 = year2Result();
   const all = combine([y1, y2]);
+  const left = TOTAL_CREDITS - all.credits;
 
   return `
-    <h2 class="sr-only">Summary</h2>
-    ${renderVerdict()}
-    ${renderYear1Shortcut()}
-    <div class="summary-grid">
-      ${renderGPACard('COMBINED CGPA (Y1 + Y2)', all, '#1a3a5c', `${all.credits} of ${DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS} credits graded`)}
-      ${renderGPACard('YEAR 1 CGPA', y1, '#2196F3', state.y1Shortcut.on ? `${y1.credits} credits (entered directly)` : `${y1.credits} of ${DEFAULT_YEAR1_CREDITS} credits graded`)}
-      ${renderGPACard('YEAR 2 CGPA', y2, '#00897B', `${y2.credits} of ${DEFAULT_YEAR2_CREDITS} credits graded`)}
-      <div class="gpa-card" style="--card-color: #9C27B0">
-        <div class="gpa-card-top-bar"></div>
-        <div class="gpa-card-content">
-          <h3 class="gpa-card-title">CREDITS GRADED</h3>
-          <div class="gpa-card-value">${all.credits}</div>
-          <div class="gpa-card-credits">of ${DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS} (Y1 ${y1.credits} · Y2 ${y2.credits})</div>
-        </div>
+    ${renderVerdict(all)}
+    <section class="figures" aria-label="CGPA by year">
+      ${figure('Year 1 CGPA', y1, state.y1Shortcut.on ? `Entered directly, ${y1.credits} credits` : `${y1.credits} of ${DEFAULT_YEAR1_CREDITS} credits graded`)}
+      ${figure('Year 2 CGPA', y2, `${y2.credits} of ${DEFAULT_YEAR2_CREDITS} credits graded`)}
+      <div class="figure">
+        <h3 class="figure-title">Still to be graded</h3>
+        <p class="figure-value">${left}</p>
+        <p class="figure-note">credits, out of ${TOTAL_CREDITS} counted in CGPA</p>
       </div>
-    </div>
-
+    </section>
+    ${renderYear1Shortcut()}
     ${renderProgression()}
-
-    <div class="summary-bottom">
-      <div class="side-cards">
+    <div class="summary-columns">
+      <div class="column">
         ${renderProbation()}
         ${renderPromotion()}
         ${renderDiploma()}
       </div>
-      <div class="side-cards">
+      <div class="column">
         ${renderPlanner()}
         ${renderHonours()}
       </div>
@@ -443,48 +441,47 @@ function cumulativeSteps(ids) {
   return ids.map(id => {
     const term = sectionResult(id);
     acc = [...acc, term];
-    return { label: `+ ${byId[id].short}`, term, r: combine(acc) };
+    return { label: byId[id].short, term, r: combine(acc) };
   });
 }
 
-function renderTrack(title, sub, steps, color) {
+function renderTrack(title, sub, steps, cls) {
   return `
-    <div class="track" style="--card-color:${color}">
-      <div class="track-head"><strong>${title}</strong><span>${sub}</span></div>
-      <div class="progress-strip">
+    <div class="track ${cls}">
+      <h4 class="track-title">${title} <span>${sub}</span></h4>
+      <ol class="track-steps">
         ${steps.map(s => `
-          <div class="progress-step ${s.term && !s.term.hasGrades ? 'is-pending' : ''} ${s.total ? 'is-total' : ''}">
-            <div class="progress-label">${s.label}</div>
-            <div class="progress-value">${s.r.hasGrades ? s.r.gpa.toFixed(2) : '<span aria-hidden="true">—</span><span class="sr-only">no grades</span>'}</div>
-            <div class="progress-term">${s.note ?? (s.term ? (s.term.hasGrades ? `term ${s.term.gpa.toFixed(2)}` : 'no grades') : '')}</div>
-          </div>`).join('')}
-      </div>
+          <li class="step ${s.term && !s.term.hasGrades ? 'is-empty' : ''} ${s.total ? 'is-total' : ''}">
+            <span class="step-label">${s.total ? s.label : `After ${s.label}`}</span>
+            <span class="step-value">${s.r.hasGrades ? s.r.gpa.toFixed(2) : '<span aria-hidden="true">—</span><span class="sr-only">no grades</span>'}</span>
+            <span class="step-note">${s.note ?? (s.term ? (s.term.hasGrades ? `${s.label} alone: ${s.term.gpa.toFixed(2)}` : 'No grades yet') : '')}</span>
+          </li>`).join('')}
+      </ol>
     </div>`;
 }
 
 function renderProgression() {
   const y1 = year1Result(), y2 = year2Result();
   const y1Steps = state.y1Shortcut.on
-    ? [{ label: 'Year 1', r: y1, note: 'entered directly', total: true }]
-    : [...cumulativeSteps(YEAR1_IDS), { label: 'Year 1', r: y1, note: `${y1.credits} cr`, total: true }];
-  const y2Steps = [...cumulativeSteps(YEAR2_IDS), { label: 'Year 2', r: y2, note: `${y2.credits} cr`, total: true }];
+    ? [{ label: 'Year 1', r: y1, note: 'Entered directly', total: true }]
+    : [...cumulativeSteps(YEAR1_IDS), { label: 'Year 1', r: y1, note: `${y1.credits} credits`, total: true }];
+  const y2Steps = [...cumulativeSteps(YEAR2_IDS), { label: 'Year 2', r: y2, note: `${y2.credits} credits`, total: true }];
   let acc = [y1];
-  const progSteps = [{ label: 'Year 1', r: y1, note: `${y1.credits} cr` }, ...YEAR2_IDS.map(id => {
+  const bothSteps = [{ label: 'Year 1', r: y1, note: `${y1.credits} credits` }, ...YEAR2_IDS.map(id => {
     const term = sectionResult(id);
     acc = [...acc, term];
-    return { label: `+ ${byId[id].short}`, term, r: combine(acc) };
-  }), { label: 'Combined', r: combine([y1, y2]), note: `${y1.credits + y2.credits} cr`, total: true }];
+    return { label: byId[id].short, term, r: combine(acc) };
+  }), { label: 'Both years', r: combine([y1, y2]), note: `${y1.credits + y2.credits} credits`, total: true }];
+  bothSteps[0].label = 'Y1'; bothSteps[0].term = null;
 
   return `
-    <div class="progress-card">
-      <div class="progress-head">
-        <h3>Cumulative CGPA</h3>
-        <p>Each box is the CGPA up to and including that term, weighted by credits. The small number is that term alone.</p>
-      </div>
-      ${renderTrack('Year 1', `${DEFAULT_YEAR1_CREDITS} credits`, y1Steps, '#2196F3')}
-      ${renderTrack('Year 2', `${DEFAULT_YEAR2_CREDITS} credits`, y2Steps, '#00897B')}
-      ${renderTrack('Both years', `${DEFAULT_YEAR1_CREDITS + DEFAULT_YEAR2_CREDITS} credits (MOOC excluded)`, progSteps, '#1a3a5c')}
-    </div>
+    <section class="panel progression" aria-labelledby="prog-title">
+      <h2 id="prog-title" class="panel-title">Cumulative CGPA</h2>
+      <p class="panel-sub">Each figure is the CGPA up to and including that term, weighted by credits.</p>
+      ${renderTrack('Year 1', `${DEFAULT_YEAR1_CREDITS} credits`, y1Steps, 'track-y1')}
+      ${renderTrack('Year 2', `${DEFAULT_YEAR2_CREDITS} credits`, y2Steps, 'track-y2')}
+      ${renderTrack('Both years', `${TOTAL_CREDITS} credits, MOOCs excluded`, bothSteps, 'track-all')}
+    </section>
   `;
 }
 
@@ -504,7 +501,7 @@ function renderYear1Shortcut() {
         <div class="field-row y1-direct-fields">
           <label>Year 1 CGPA <input type="number" class="field-input" min="0" max="4" step="0.01" placeholder="e.g. 3.12" inputmode="decimal" data-field="y1-cgpa" value="${esc(sc.cgpa)}" /></label>
           <label>Year 1 credits <input type="number" class="field-input" min="0" step="0.5" inputmode="decimal" data-field="y1-credits" value="${esc(sc.credits)}" /></label>
-          <span class="info-note">${DEFAULT_YEAR1_CREDITS} credits = 16 + 18 + 15 + 5 NCL</span>
+          <span class="field-note">${DEFAULT_YEAR1_CREDITS} credits: 16 + 18 + 15, plus 5 NCL</span>
         </div>` : ''}
     </div>
   `;
@@ -541,16 +538,16 @@ function nearestGrade(gpa) {
 function renderPlanner() {
   const { autoRem } = plannerResult();
   return `
-    <div class="info-card" style="--card-color:#00897B">
-      <h3>🎯 Target planner</h3>
-      <p class="info-sub">What do you need from here to finish at a given CGPA?</p>
+    <section class="panel planner">
+      <h2 class="panel-title">Target planner</h2>
+      <p class="panel-sub">The average you need on the credits left to finish at a target CGPA.</p>
       <div class="field-row">
         <label>Target CGPA <input type="number" class="field-input" min="0" max="4" step="0.01" data-field="target-cgpa" value="${esc(state.target.cgpa)}" /></label>
         <label>Credits remaining <input type="number" class="field-input" min="0" step="0.5" data-field="target-remaining" placeholder="${autoRem}" value="${esc(state.target.remaining)}" /></label>
       </div>
-      <p class="info-note">Leave "credits remaining" blank to use the ${autoRem} ungraded credits in your Year 2 tabs.</p>
+      <p class="field-note">Leave "credits remaining" blank to use the ${autoRem} ungraded credits in your Year 2 tabs.</p>
       <div data-live="planner" role="status">${plannerOutputHTML()}</div>
-    </div>
+    </section>
   `;
 }
 
@@ -601,44 +598,49 @@ function verdict() {
   const finalFails = fails.filter(isFinal);
   const reasons = fails.map(r => `${r.label} (${r.detail})`);
 
-  if (finalFails.length) return { key: 'fail', label: 'FAIL', reasons,
+  if (finalFails.length) return { key: 'fail', label: 'Fail', reasons,
     text: 'At least one rule is broken and later grades can’t fix it. Rule 2.4 allows a retest in some cases, so talk to the Programme Office.' };
-  if (fails.length) return { key: 'at-risk', label: 'FAILING SO FAR', reasons,
+  if (fails.length) return { key: 'at-risk', label: 'Failing so far', reasons,
     text: 'Based on the grades entered so far, you would not meet the rules below. Grades still to come can change this.' };
-  if (y1Complete && y2Complete && (y1.hasGrades || y2.hasGrades)) return { key: 'pass', label: 'PASS', reasons: [],
+  if (y1Complete && y2Complete && (y1.hasGrades || y2.hasGrades)) return { key: 'pass', label: 'Pass', reasons: [],
     text: 'Every credit is graded and you meet all the promotion and diploma rules.' };
-  if (y1.hasGrades || y2.hasGrades) return { key: 'provisional', label: 'PASSING SO FAR', reasons: [],
+  if (y1.hasGrades || y2.hasGrades) return { key: 'provisional', label: 'Passing so far', reasons: [],
     text: `No rule is broken by the grades entered so far. ${y1Complete ? 'Year 1 is complete.' : 'Year 1 still has ungraded credits.'} ${y2Complete ? 'Year 2 is complete.' : 'Year 2 still has ungraded credits.'}` };
-  return { key: 'empty', label: 'NO GRADES YET', reasons: [],
+  return { key: 'empty', label: 'No grades yet', reasons: [],
     text: 'Enter grades on the term tabs, or switch on Year 1 direct input, to get a verdict.' };
 }
 
-function renderVerdict() {
+function renderVerdict(all) {
   const v = verdict();
   return `
-    <section class="verdict-hero v-${v.key}" aria-labelledby="verdict-title">
-      <div class="verdict-badge" aria-hidden="true">${VERDICT_ICON[v.key]}</div>
-      <div class="verdict-body">
-        <p class="verdict-kicker">Overall verdict · Rules 2.10 &amp; 2.11</p>
-        <h2 id="verdict-title" class="verdict-title">${v.label}</h2>
-        <p class="verdict-text">${v.text}</p>
-        ${v.reasons.length ? `<ul class="verdict-reasons">${v.reasons.map(r => `<li>${r}</li>`).join('')}</ul>` : ''}
+    <section class="hero v-${v.key}" aria-labelledby="verdict-title">
+      <div class="hero-verdict">
+        <div class="hero-badge" aria-hidden="true">${VERDICT_ICON[v.key]}</div>
+        <div>
+          <h2 id="verdict-title" class="hero-title"><span class="sr-only">Verdict: </span>${v.label}</h2>
+          <p class="hero-text">${v.text}</p>
+          ${v.reasons.length ? `<ul class="hero-reasons">${v.reasons.map(r => `<li>${r}</li>`).join('')}</ul>` : ''}
+          <p class="hero-basis">Checked against Rule 2.10 (promotion) and Rule 2.11 (diploma).</p>
+        </div>
+      </div>
+      <div class="hero-figure">
+        <h3 class="hero-figure-title">Combined CGPA</h3>
+        <p class="hero-number ${all.hasGrades ? '' : 'is-empty'}">${all.hasGrades ? all.gpa.toFixed(2) : '<span aria-hidden="true">—</span><span class="sr-only">No grades yet</span>'}</p>
+        ${creditsProgress(all, 'on-light')}
       </div>
     </section>`;
 }
 
-function statusCard(title, subtitle, rules, icon) {
+function statusCard(title, subtitle, rules) {
   const st = getOverallStatus(rules);
   const word = st === 'on-track' ? 'All met' : st === 'at-risk' ? 'Not met' : 'In progress';
   return `
-    <section class="promotion-card status-${st}" aria-label="${title}">
-      <div class="promotion-header">
-        <div class="promotion-icon" aria-hidden="true">${st === 'on-track' ? icon : st === 'at-risk' ? '⚠️' : '⏳'}</div>
-        <div>
-          <h3 class="promotion-title">${title} <span class="status-pill s-${st}">${word}</span></h3>
-          <p class="promotion-subtitle">${subtitle}</p>
-        </div>
+    <section class="panel rules-panel status-${st}" aria-label="${title}">
+      <div class="rules-head">
+        <h2 class="panel-title">${title}</h2>
+        <span class="status-pill s-${st}">${word}</span>
       </div>
+      <p class="panel-sub">${subtitle}</p>
       ${renderRules(rules)}
     </section>`;
 }
@@ -647,17 +649,12 @@ function renderPromotion() {
   const rules = promotionRules();
   if (!rules) {
     return `
-      <section class="promotion-card status-pending" aria-label="Year 1 promotion check">
-        <div class="promotion-header">
-          <div class="promotion-icon" aria-hidden="true">ℹ️</div>
-          <div>
-            <h3 class="promotion-title">Year 1 promotion check</h3>
-            <p class="promotion-subtitle">Not available while Year 1 CGPA is entered directly. It needs course grades.</p>
-          </div>
-        </div>
+      <section class="panel rules-panel status-pending" aria-label="Promotion to Year 2">
+        <div class="rules-head"><h2 class="panel-title">Promotion to Year 2</h2></div>
+        <p class="panel-sub">Needs your Year 1 course grades, so it’s off while Year 1 CGPA is entered directly.</p>
       </section>`;
   }
-  return statusCard('Year 1 promotion check', 'Rule 2.10: promotion to second year', rules, '✅');
+  return statusCard('Promotion to Year 2', 'Rule 2.10', rules);
 }
 
 /** GPA over the courses matching `pick(course, section)` (course-grade mode only). */
@@ -687,34 +684,35 @@ function nclHonoursResult() { return honoursGPA(HONOURS[2].pick); }
 
 function renderHonours() {
   return `
-    <div class="info-card" style="--card-color:#9C27B0">
-      <h3>🏅 Academic honours GPAs</h3>
-      <p class="info-sub">The GPAs §2.8 uses to rank honours. Only courses with grades count.${state.y1Shortcut.on ? ' Year 1 courses are left out while Year 1 CGPA is entered directly.' : ''}</p>
+    <section class="panel honours">
+      <h2 class="panel-title">Honours standing</h2>
+      <p class="panel-sub">The GPAs Rule 2.8 uses to rank academic honours. Only courses with grades count.${state.y1Shortcut.on ? ' Year 1 courses are left out while Year 1 CGPA is entered directly.' : ''}</p>
       <div class="honours-grid">
         ${HONOURS.map(h => { const r = honoursGPA(h.pick); return `
           <div class="honour ${r.hasGrades ? '' : 'is-pending'}">
-            <div class="honour-title">${h.title} <span>${h.rule}</span></div>
+            <h3 class="honour-title">${h.title}<span class="honour-rule">${h.rule}</span></h3>
             <div class="honour-value">${fmt(r.gpa, r.hasGrades)}</div>
             <div class="honour-sub">${h.sub}</div>
             <div class="honour-sub">${r.credits} of ${r.total} credits graded</div>
           </div>`; }).join('')}
       </div>
-    </div>`;
+    </section>`;
 }
 
 function renderRules(rules) {
   const word = { pass: 'Met', fail: 'Not met', pending: 'Pending' };
+  const mark = { pass: '✓', fail: '✕', pending: '' };
   return `<ul class="rules-list">
     ${rules.map(r => `
       <li class="rule-item rule-${r.status}">
-        <span class="rule-icon" aria-hidden="true">${r.status === 'pass' ? '✅' : r.status === 'fail' ? '❌' : '⏳'}</span>
+        <span class="rule-mark m-${r.status}" aria-hidden="true">${mark[r.status]}</span>
         <div><div class="rule-label"><span class="sr-only">${word[r.status]}: </span>${r.label}</div><div class="rule-detail">${r.detail}</div></div>
       </li>`).join('')}
   </ul>`;
 }
 
 function renderDiploma() {
-  return statusCard('Diploma eligibility', 'Rule 2.11: award of diploma', diplomaRules(), '🎓');
+  return statusCard('Diploma', 'Rule 2.11', diplomaRules());
 }
 
 function renderProbation() {
@@ -738,9 +736,8 @@ function renderSection(id) {
   if (def.year === 1 && state.y1Shortcut.on) {
     return `${y1Strip}
       <div class="term-detail">
-        <div class="term-detail-header"><div><h2 class="term-detail-title">${def.name}</h2></div></div>
+        <div class="term-head"><div><h2 class="term-title">${def.name}</h2></div></div>
         <div class="direct-mode-message">
-          <div class="direct-mode-icon" aria-hidden="true">📋</div>
           <h3>Year 1 CGPA is entered directly</h3>
           <p>${def.name} course grades are ignored. Turn off the switch above to use course grades again.</p>
         </div>
@@ -749,14 +746,15 @@ function renderSection(id) {
 
   return `${y1Strip}
     <div class="term-detail" style="--card-color:${def.color}">
-      <div class="term-detail-header">
+      <div class="term-head">
         <div>
-          <h2 class="term-detail-title">${def.name}</h2>
-          <span class="credit-badge" data-live="credit-badge">${r.listedCredits} Credits</span>
-          <span class="year-tag">Year ${def.year}</span>
-          ${def.weeks ? `<span class="term-detail-subtitle">• ${def.weeks}-week term</span>` : ''}
+          <h2 class="term-title">${def.name}</h2>
+          <p class="term-meta"><span data-live="credit-badge">${r.listedCredits} credits</span>, Year ${def.year}${def.weeks ? `, ${def.weeks}-week term` : ''}</p>
         </div>
-        <div class="gpa-display-box" data-live="section-gpa" aria-label="${def.name} GPA">GPA: ${fmt(r.gpa, r.hasGrades)}</div>
+        <div class="term-gpa">
+          <span class="term-gpa-label">${def.name} GPA</span>
+          <span class="term-gpa-value" data-live="section-gpa">${fmt(r.gpa, r.hasGrades)}</span>
+        </div>
       </div>
       ${def.note ? `<div class="section-note">${def.note}</div>` : ''}
 
@@ -782,8 +780,7 @@ function renderSection(id) {
 
       ${ss.directMode ? `
         <div class="direct-mode-message">
-          <div class="direct-mode-icon" aria-hidden="true">📋</div>
-          <h3>Course grades ignored</h3>
+                    <h3>Course grades ignored</h3>
           <p>This term counts as one block: the GPA you typed × the credits you typed.</p>
         </div>` : renderCourseTable(def, ss)}
     </div>
@@ -824,7 +821,7 @@ function renderCourseTable(def, ss) {
       ? `<input type="text" class="cell-input" placeholder="${esc(c.placeholder || 'Course name')}" value="${esc(c.name)}"
            aria-label="Course name, row ${i + 1}" data-field="course-name" data-section="${id}" data-i="${i}" />`
       : `<span class="course-name">${esc(c.name)}</span>`}
-                ${c.when ? `<span class="when-badge">${esc(c.when)}</span>` : ''}
+                ${c.when ? `<span class="course-meta">${esc(c.when)}${c.code ? ` <span class="course-code">${esc(c.code)}</span>` : ''}</span>` : ''}
               </td>
               ${def.ncl ? `<td class="col-category">${esc(c.category || '')}</td>
               <td class="col-grading">${c.absolute
@@ -872,8 +869,8 @@ function updateLive(sectionId, rowIndex) {
   setLive('tracker', trackerHTML());
   if (sectionId) {
     const r = sectionResult(sectionId);
-    setLive('section-gpa', `GPA: ${fmt(r.gpa, r.hasGrades)}`);
-    setLive('credit-badge', `${r.listedCredits} Credits`);
+    setLive('section-gpa', fmt(r.gpa, r.hasGrades));
+    setLive('credit-badge', `${r.listedCredits} credits`);
     if (rowIndex !== undefined) setLive(`pts-${sectionId}-${rowIndex}`, pointsText(state.sections[sectionId].courses[rowIndex]));
   }
   setLive('planner', plannerOutputHTML());

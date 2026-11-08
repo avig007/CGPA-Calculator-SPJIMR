@@ -12,10 +12,10 @@
 // ═══════════════════════════════════════════════════════════════
 
 export const firebaseConfig = {
-    apiKey: '',
-    authDomain: '',
-    projectId: '',
-    appId: '',
+    apiKey: '',                                         // ← paste from Firebase
+    authDomain: 'cgpa-calculator-28764.firebaseapp.com',
+    projectId: 'cgpa-calculator-28764',
+    appId: '',                                          // ← paste from Firebase
 };
 
 export const cloudConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);

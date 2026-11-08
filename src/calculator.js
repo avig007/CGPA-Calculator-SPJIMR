@@ -1,87 +1,37 @@
-// ═══════════════════════════════════════════════════════════════
-//  GPA / CGPA Calculation Engine
-// ═══════════════════════════════════════════════════════════════
+// GPA maths for the PGDM(BM) grading system (General Guidelines §2.7.2, Table 7).
 
 import { GRADE_SCALE } from './data.js';
 
+const POINTS = new Map(GRADE_SCALE.filter(g => g.value !== null).map(g => [g.label, g.value]));
+
+/** Grade points for a letter grade, or null when there is no grade yet. */
+export const gradeToPoints = grade => (POINTS.has(grade) ? POINTS.get(grade) : null);
+
 /**
- * Convert letter grade to grade points.
+ * Credit-weighted GPA over the graded rows of `rows` ([{ credits, grade }]).
+ * Ungraded rows are ignored.
  */
-export function gradeToPoints(gradeLabel) {
-    if (gradeLabel === 'Pass') return 4.0;
-    if (gradeLabel === 'Fail') return 0.0;
-    const g = GRADE_SCALE.find(g => g.label === gradeLabel);
-    return g ? g.value : null;
+export function calcTermGPA(rows) {
+    const graded = rows
+        .map(r => ({ credits: Number(r.credits) || 0, points: gradeToPoints(r.grade) }))
+        .filter(r => r.points !== null);
+    const gradedCredits = graded.reduce((sum, r) => sum + r.credits, 0);
+    const weighted = graded.reduce((sum, r) => sum + r.points * r.credits, 0);
+    return { gpa: gradedCredits ? weighted / gradedCredits : 0, gradedCredits };
 }
 
-/**
- * Calculate GPA from an array of { credits, grade } objects.
- * Only courses with a valid grade (not null / '—') are included.
- * Returns { gpa, totalCredits, gradedCredits }.
- */
-export function calcTermGPA(courses) {
-    let totalPoints = 0;
-    let gradedCredits = 0;
-
-    for (const c of courses) {
-        const pts = gradeToPoints(c.grade);
-        if (pts !== null) {
-            totalPoints += pts * c.credits;
-            gradedCredits += c.credits;
-        }
-    }
-
-    return {
-        gpa: gradedCredits > 0 ? totalPoints / gradedCredits : 0,
-        totalCredits: courses.reduce((s, c) => s + c.credits, 0),
-        gradedCredits,
-    };
+/** Average GPA needed on `remaining` credits to finish exactly at `target`. */
+export function requiredGPA(points, credits, remaining, target) {
+    return remaining > 0 ? (target * (credits + remaining) - points) / remaining : null;
 }
 
-/**
- * Calculate cumulative GPA across multiple term results.
- * @param {Array<{ gpa: number, credits: number, isDirectInput: boolean }>} termResults
- * Each entry is either from course-by-course calc or direct GPA input.
- * Returns { cgpa, totalCredits }.
- */
-export function calcCGPA(termResults) {
-    let totalWeightedPoints = 0;
-    let totalCredits = 0;
-
-    for (const tr of termResults) {
-        if (tr.credits > 0 && (tr.gpa > 0 || tr.hasGrades)) {
-            totalWeightedPoints += tr.gpa * tr.credits;
-            totalCredits += tr.credits;
-        }
-    }
-
-    return {
-        cgpa: totalCredits > 0 ? totalWeightedPoints / totalCredits : 0,
-        totalCredits,
-    };
-}
-
-/**
- * GPA needed over the remaining credits to finish at `target` CGPA.
- * Returns null when there are no remaining credits.
- */
-export function requiredGPA(earnedPoints, earnedCredits, remainingCredits, target) {
-    if (!(remainingCredits > 0)) return null;
-    return (target * (earnedCredits + remainingCredits) - earnedPoints) / remainingCredits;
-}
-
-/**
- * Count grades across an array of { grade } course objects.
- */
-export function countGrades(allCourses) {
-    const counts = { F: 0, D: 0, I: 0, total: 0 };
-    for (const c of allCourses) {
-        if (c.grade && c.grade !== '—') {
-            counts.total++;
-            if (c.grade === 'F' || c.grade === 'Fail') counts.F++;
-            if (c.grade === 'D') counts.D++;
-            if (c.grade === 'I') counts.I++;
-        }
-    }
-    return counts;
+/** How many graded rows, Fs, Ds and Incompletes are in `rows`. */
+export function countGrades(rows) {
+    const tally = { total: 0, F: 0, D: 0, I: 0 };
+    rows.forEach(({ grade }) => {
+        if (!grade || grade === '—') return;
+        tally.total += 1;
+        if (grade in tally) tally[grade] += 1;
+    });
+    return tally;
 }

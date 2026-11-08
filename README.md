@@ -1,104 +1,73 @@
-# 🎓 CGPA Calculator — SPJIMR PGDM(BM) 2025-27 (Year 1 + Year 2)
+# CGPA Tracker — SPJIMR PGDM(BM) 2025-27
 
-A real-time CGPA calculator for **SPJIMR PGDM(BM) 2025-27** covering both years: term GPAs, Year 1 CGPA, Year 2 CGPA and the combined CGPA, plus the promotion (Rule 2.10) and diploma (Rule 2.11) checks.
+Track your CGPA across both years of the PGDM(BM) programme, see whether you meet the promotion and diploma rules, and keep your grades saved to your own account.
 
-### 👉 [**Open the Calculator**](https://avig007.github.io/CGPA-Calculator-SPJIMR/)
+**[Open the tracker](https://avig007.github.io/CGPA-Calculator-SPJIMR/)**
 
----
+Built from the batch's *General Guidelines PGDM(BM) 2025-2027*: the credit structure (§1.2.5), the grading tables (§2.7.2, Tables 7 and 9), and the rules on probation (2.6), honours (2.8), promotion (2.10) and the diploma (2.11).
 
-## ✨ Features
+## What it does
 
-| Feature | Description |
+| | |
 |---|---|
-| 📍 **Live tracker** | Pinned bar on every tab: verdict, combined CGPA, Year 1, Year 2, the current term's GPA and credits graded, updating as you pick grades |
-| ⚖️ **PASS / FAIL verdict** | Combines Rules 2.10 and 2.11: **PASS**, **PASSING SO FAR**, **FAILING SO FAR** or **FAIL** (a final breach like 2 Fs, or a CGPA rule once all credits are graded) |
-| 📚 **Official credit structure** | All courses from §1.2.5 of the General Guidelines: Year 1 = 54 credits, Year 2 = 59 credits (113 counted in CGPA; MOOC excluded) |
-| 📈 **Three cumulative views** | Year 1 cumulative (T1 → NCL-1), Year 2 cumulative (T4 → NCL-2), and both years combined, term by term |
-| ✏️ **Your own electives** | Term 4 Focus Area/Strategy rows and Term 6 INTEX/Common Elective/GFT rows can be renamed, re-credited, added or removed |
-| ⚡ **Year 1 CGPA direct input** | Switch at the top of Summary and every Year 1 tab: type your Year 1 CGPA + credits instead of every grade |
-| 🔄 **Direct GPA input** | Enter any term as GPA × credits straight from your grade sheet |
-| ✅ **Promotion check (2.10)** | Term 1 ≥ 2.4, Comp Exam not F, Year 1 CGPA ≥ 2.4, F/D limits |
-| 🎓 **Diploma check (2.11)** | Year 1 ≥ 2.4, Year 2 ≥ 2.4, combined ≥ 2.4, max 1 F and 3 Ds (1 D if an F) in Year 2 |
-| ⚠️ **Probation flag (2.6)** | Warns if any term GPA is below 2.4 |
-| 📝 **NCL as per guidelines** | Year 1 NCL (Comp Exam 1, ADMAP/Start Up 2, Abhyudaya 2) and Year 2 NCL (Summer Internship 2, DoCC 4, ARI 2) count in CGPA; F/D limits include NCL grades |
-| 🔢 **Table 9 absolute grading** | Type your marks % for ADMAP, Abhyudaya or DoCC and the grade is set from the absolute bands |
-| 🏅 **Honours GPAs (2.8)** | Dean's Honor List core GPA (core + NCL, no focus area or electives), Area Top 2 GPA (14 Focus Area credits), NCL honours GPA (SoS I, ADMAP/Start Up, Abhyudaya, DoCC) |
-| 🎯 **Target planner** | The average you need on the remaining credits to finish at a target CGPA |
-| 🔐 **Email login** | Sign in with email + password (with password reset) and your grades are saved to your account, so they follow you to any device. Each account can only see its own grades. Without login, grades stay in that browser |
+| **Live tracker** | A bar pinned to the top of every tab shows the verdict, combined CGPA, Year 1, Year 2, the current term's GPA, and how many credits are graded. It updates as you pick grades. |
+| **Pass / fail verdict** | Combines Rules 2.10 and 2.11 into *Pass*, *Passing so far*, *Failing so far* or *Fail*. Breaches later grades can't undo (two Fs, an F in the Comprehensive Exam, Term 1 below 2.4) are a final *Fail*; CGPA rules become final once every credit they cover is graded. |
+| **CGPA three ways** | Year 1 cumulative, Year 2 cumulative and both years combined, term by term. |
+| **Official courses** | Year 1 = 54 credits, Year 2 = 53 (Term IV 31, Term VI 14 electives, NCL 8). MOOC credits are excluded from CGPA. |
+| **Your electives** | Term VI rows can be renamed, re-credited, added or removed. |
+| **Direct input** | Type your Year 1 CGPA (or any term's GPA) straight from a grade sheet. |
+| **NCL grading** | Type your marks % for ADMAP, Abhyudaya or DoCC and the grade is set from the Table 9 bands. F and D limits include NCL grades. |
+| **Honours standing** | Dean's Honor List core GPA, Area Top 2 focus-area GPA (14 credits) and NCL honours GPA (Rule 2.8). |
+| **Probation flag** | Warns if any term GPA is below 2.4 (Rule 2.6). |
+| **Target planner** | The average you need on the credits left to finish at a target CGPA. |
+| **Accounts** | Sign in with email and password (with password reset) and your grades follow you to any device. Each account can only see its own grades. Without signing in, grades stay in that browser. |
 
-## ♿ Accessibility
-
-- Text meets WCAG AA contrast (4.5:1) across the app
-- Every input, grade picker and button has a screen-reader label; status is shown in words, not just colour
-- Full keyboard use: skip link, visible focus rings, arrow keys between tabs, focus stays on the grade you just picked
-- CGPA and verdict changes are announced to screen readers
-- Respects "reduce motion"; touch targets are at least 36–40px
-
-## 📖 Grade scale (Table 7)
+## Grade points (Table 7)
 
 | A+ | A | B+ | B | C+ | C | D | F |
 |---|---|---|---|---|---|---|---|
 | 4.0 | 3.5 | 3.0 | 2.5 | 2.0 | 1.5 | 1.0 | 0 |
 
-## 🗂️ My Term IV courses (pre-filled from Wisenet)
-
-| Group | Course | Credits |
-|---|---|---|
-| IM focus area | Agentic AI, Technology Infrastructure for the Digital Age, Transformation Through Cloud and Edge Computing | 2 each |
-| Strategy core | Business Consulting, Business and Society, Management Control Systems, Management of Change, Strategic Innovation Models, Strategic Leadership Under Uncertainty | 2 each |
-| BM core | Capitalism and Its Critics: A History (2), Systems and Design Thinking (4), Science of Spirituality II (1), Ethical Aspects of Business (2), International Business (2), Legal Aspects of Business (2) | 13 |
-
-Term IV total: 31 credits. Wisenet lists the Term V core courses under Term IV, so there's no separate Term 5 tab.
-
-## 🗂️ My Term VI electives (pre-filled)
-
-Focus area: Information Management & Analytics · INTEX/GFT: none · 14 elective credits
-
-| When | Course | Credits |
-|---|---|---|
-| Term V · Nov–Dec | Generative AI for Business | 2 |
-| Term VI · Jan | Sales Operations, Behavioral Decision Theory, Creative Thinking for Innovation | 2 each |
-| Term VI · Mar | Fortunes and Fiascos, Investing in Equities, International Marketing | 2 each |
-
-Using a different set? Edit the rows on the Term 6 tab, or change `term6` in `src/data.js`.
-
-## 🧮 Year 2 credit structure
+## Year 2 courses (pre-filled from Wisenet and the R2 elective allotment)
 
 | Term | Courses | Credits |
 |---|---|---|
-| Term IV | Focus Area & Strategy courses (18), Management and Capitalism (2), Design Thinking (2) | 22 |
-| Term V | Science of Spirituality II (1), International Business, Ethical Aspects, Legal Aspects, Systems Thinking (2 each) | 9 |
-| Term VI | INTEX / Common Electives / GFT (Term V common electives count here) | 20 |
-| NCL Year II | Corporate Summer Internship (2), DoCC incl. SDJ (4), ARI (2) | 8 |
+| Term IV, Information Management focus area | Agentic AI; Technology Infrastructure for the Digital Age; Transformation Through Cloud and Edge Computing | 2 each |
+| Term IV, Strategy core | Business Consulting; Business and Society; Management Control Systems; Management of Change; Strategic Innovation Models; Strategic Leadership Under Uncertainty | 2 each |
+| Term IV, BM core | Capitalism and Its Critics: A History (2); Systems and Design Thinking (4); Science of Spirituality II (1); Ethical Aspects of Business (2); International Business (2); Legal Aspects of Business (2) | 13 |
+| Term VI electives | Generative AI for Business (Term V, Nov–Dec); Sales Operations, Behavioral Decision Theory, Creative Thinking for Innovation (January); Fortunes and Fiascos, Investing in Equities, International Marketing (March) | 2 each |
+| NCL, Year II | Corporate Summer Internship (2); DoCC including SDJ (4); Applied Research Insights (2) | 8 |
 
-## 🔐 Turn on email login (Firebase, free)
+Using a different set of courses? Edit `src/data.js`, or edit the Term VI rows in the app.
 
-The site works without this; grades are then saved only in each person's browser. To give everyone their own login:
+## Turning on accounts (Firebase, free plan)
 
-1. Go to [console.firebase.google.com](https://console.firebase.google.com) → **Add project** (Analytics can be off). The free Spark plan is enough.
-2. **Build → Authentication → Get started → Sign-in method → Email/Password → Enable → Save.**
-3. **Authentication → Settings → Authorized domains → Add domain:** `avig007.github.io`
-4. **Build → Firestore Database → Create database →** *Production mode*, location `asia-south1 (Mumbai)`.
-5. **Firestore → Rules:** replace everything with the contents of [`firestore.rules`](firestore.rules) → **Publish.** (Each user can read and write only `users/{their uid}`.)
-6. **Project settings (⚙️) → General → Your apps → Web `</>` →** register an app (no hosting) and copy `apiKey`, `authDomain`, `projectId`, `appId` into [`src/firebase-config.js`](src/firebase-config.js). Commit and push; GitHub Pages redeploys.
+The site works without this; grades then stay in each person's browser.
 
-The web config is not a secret (every Firebase site ships it to the browser); the security rules are what protect the data. Optional: **Authentication → Templates** lets you brand the password-reset email.
+1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com).
+2. **Security → Authentication → Get started → Sign-in method → Email/Password → Enable → Save.**
+3. **Authentication → Settings → Authorized domains → Add domain:** `avig007.github.io`.
+4. **Databases & Storage → Firestore → Create database:** Standard edition, location `asia-south1 (Mumbai)`, production mode.
+5. **Firestore → Rules:** replace everything with [`firestore.rules`](firestore.rules) and publish. Each user can read and write only `users/{their uid}`.
+6. **Settings → Project settings → Your apps → Web (`</>`):** register an app and copy `apiKey` and `appId` into [`src/firebase-config.js`](src/firebase-config.js) (the project ID and auth domain are already filled in). Push, and the site redeploys.
 
-## 🛠️ Run locally
+These web config values are not secrets; every Firebase site sends them to the browser. The security rules are what protect the data.
+
+## Run it locally
 
 ```bash
 npm install
-npm run dev      # local dev server
-npm run build    # production build in dist/
-MOCK_CLOUD=1 npx vite build   # test build with a fake login backend (dist-test/)
+npm run dev                      # local server
+npm run build                    # production build in dist/
+MOCK_CLOUD=1 npx vite build      # test build with a stand-in login backend (dist-test/)
 ```
 
-Pushing to `main` deploys to GitHub Pages through `.github/workflows/deploy.yml` (Settings → Pages → Source: **GitHub Actions**). `vercel.json` is included if you'd rather host on Vercel.
+Pushing to `main` publishes the site to GitHub Pages (`.github/workflows/deploy.yml`).
 
-## ⚠️ Disclaimer
+## Disclaimer
 
-Unofficial tool. Your official grade sheet and the Programme Office are the final word.
+An unofficial tool. Your grade sheet and the Programme Office have the final word.
 
-## 📄 License
+## Licence
 
 MIT. See [LICENSE](LICENSE).
