@@ -24,7 +24,7 @@ A real-time CGPA calculator for **SPJIMR PGDM(BM) 2025-27** covering both years:
 | 🔢 **Table 9 absolute grading** | Type your marks % for ADMAP, Abhyudaya or DoCC and the grade is set from the absolute bands |
 | 🏅 **Honours GPAs (2.8)** | Dean's Honor List core GPA (core + NCL, no focus area or electives), Area Top 2 GPA (14 Focus Area credits), NCL honours GPA (SoS I, ADMAP/Start Up, Abhyudaya, DoCC) |
 | 🎯 **Target planner** | The average you need on the remaining credits to finish at a target CGPA |
-| 💾 **Saved in your browser** | Grades stay between visits (localStorage, on that device only) |
+| 🔐 **Email login** | Sign in with email + password (with password reset) and your grades are saved to your account, so they follow you to any device. Each account can only see its own grades. Without login, grades stay in that browser |
 
 ## ♿ Accessibility
 
@@ -46,9 +46,9 @@ A real-time CGPA calculator for **SPJIMR PGDM(BM) 2025-27** covering both years:
 |---|---|---|
 | IM focus area | Agentic AI, Technology Infrastructure for the Digital Age, Transformation Through Cloud and Edge Computing | 2 each |
 | Strategy core | Business Consulting, Business and Society, Management Control Systems, Management of Change, Strategic Innovation Models, Strategic Leadership Under Uncertainty | 2 each |
-| BM core | Capitalism and Its Critics: A History (2), Systems and Design Thinking (4) | 6 |
+| BM core | Capitalism and Its Critics: A History (2), Systems and Design Thinking (4), Science of Spirituality II (1), Ethical Aspects of Business (2), International Business (2), Legal Aspects of Business (2) | 13 |
 
-Term V core (SoS II, International Business, Ethical Aspects, Legal Aspects) is on the Term 5 tab.
+Term IV total: 31 credits. Wisenet lists the Term V core courses under Term IV, so there's no separate Term 5 tab.
 
 ## 🗂️ My Term VI electives (pre-filled)
 
@@ -71,12 +71,26 @@ Using a different set? Edit the rows on the Term 6 tab, or change `term6` in `sr
 | Term VI | INTEX / Common Electives / GFT (Term V common electives count here) | 20 |
 | NCL Year II | Corporate Summer Internship (2), DoCC incl. SDJ (4), ARI (2) | 8 |
 
+## 🔐 Turn on email login (Firebase, free)
+
+The site works without this; grades are then saved only in each person's browser. To give everyone their own login:
+
+1. Go to [console.firebase.google.com](https://console.firebase.google.com) → **Add project** (Analytics can be off). The free Spark plan is enough.
+2. **Build → Authentication → Get started → Sign-in method → Email/Password → Enable → Save.**
+3. **Authentication → Settings → Authorized domains → Add domain:** `avig007.github.io`
+4. **Build → Firestore Database → Create database →** *Production mode*, location `asia-south1 (Mumbai)`.
+5. **Firestore → Rules:** replace everything with the contents of [`firestore.rules`](firestore.rules) → **Publish.** (Each user can read and write only `users/{their uid}`.)
+6. **Project settings (⚙️) → General → Your apps → Web `</>` →** register an app (no hosting) and copy `apiKey`, `authDomain`, `projectId`, `appId` into [`src/firebase-config.js`](src/firebase-config.js). Commit and push; GitHub Pages redeploys.
+
+The web config is not a secret (every Firebase site ships it to the browser); the security rules are what protect the data. Optional: **Authentication → Templates** lets you brand the password-reset email.
+
 ## 🛠️ Run locally
 
 ```bash
 npm install
 npm run dev      # local dev server
 npm run build    # production build in dist/
+MOCK_CLOUD=1 npx vite build   # test build with a fake login backend (dist-test/)
 ```
 
 Pushing to `main` deploys to GitHub Pages through `.github/workflows/deploy.yml` (Settings → Pages → Source: **GitHub Actions**). `vercel.json` is included if you'd rather host on Vercel.

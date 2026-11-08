@@ -95,8 +95,8 @@ export const SECTIONS = [
 
     // ── Year 2 (59 credits) ───────────────────────────────
     {
-        id: 'term4', name: 'Term 4', short: 'T4', year: 2, weeks: 16, color: '#00897B', editable: true,
-        note: 'Your Term IV courses from Wisenet: 3 Information Management focus-area courses + 6 Strategy Core (18 credits), plus BM core courses. Wisenet runs Systems and Design Thinking as one 4-credit course.',
+        id: 'term4', name: 'Term 4', short: 'T4', year: 2, weeks: 18, color: '#00897B', editable: true,
+        note: 'Your Term IV courses from Wisenet: 3 Information Management focus-area courses + 6 Strategy Core (18 credits), plus the BM core courses (13 credits). Wisenet runs Systems and Design Thinking as one 4-credit course and lists SoS II, Ethical, International Business and Legal Aspects under Term IV, so there is no separate Term 5 tab.',
         courses: [
             { name: 'Agentic AI', credits: 2, when: 'IM focus area · INF554', fixed: true, focusArea: true },
             { name: 'Technology Infrastructure for the Digital Age', credits: 2, when: 'IM focus area · INF528', fixed: true, focusArea: true },
@@ -109,21 +109,15 @@ export const SECTIONS = [
             { name: 'Strategic Leadership Under Uncertainty', credits: 2, when: 'Strategy core · STR538', fixed: true },
             { name: 'Capitalism and Its Critics: A History', credits: 2, when: 'BM core · OLS524', fixed: true },
             { name: 'Systems and Design Thinking', credits: 4, when: 'BM core · STR537', fixed: true },
-        ],
-    },
-    {
-        id: 'term5', name: 'Term 5', short: 'T5', year: 2, weeks: 15, color: '#F9A825',
-        note: 'Term V core courses per the credit structure (Systems Thinking is graded with Design Thinking on the Term 4 tab). Common electives taken in Term V count in Term VI, so they are on the Term 6 tab.',
-        courses: [
-            { name: 'Science of Spirituality II', credits: 1, when: 'OLS527' },
-            { name: 'International Business', credits: 2, when: 'STR505' },
-            { name: 'Ethical Aspects of Business', credits: 2, when: 'OLS507' },
-            { name: 'Legal Aspects of Business', credits: 2, when: 'STR531' },
+            { name: 'Science of Spirituality II', credits: 1, when: 'BM core · OLS527', fixed: true },
+            { name: 'Ethical Aspects of Business', credits: 2, when: 'BM core · OLS507', fixed: true },
+            { name: 'International Business', credits: 2, when: 'BM core · STR505', fixed: true },
+            { name: 'Legal Aspects of Business', credits: 2, when: 'BM core · STR531', fixed: true },
         ],
     },
     {
         id: 'term6', name: 'Term 6', short: 'T6', year: 2, weeks: 13, color: '#E53935', editable: true, elective: true,
-        note: 'Your allotted common electives (14 credits). Common electives done in Term V count in Term VI. The credit structure lists Term VI as 20 credits, so add rows here if more courses get added. MOOC credits are not counted in CGPA.',
+        note: 'Your allotted common electives (14 credits), including Generative AI for Business from Term V (Term V electives count in Term VI). The credit structure lists Term VI as 20 credits, so add rows here if more courses get added. MOOC credits are not counted in CGPA.',
         courses: [
             { name: 'Generative AI for Business', credits: 2, when: 'T5 · Nov–Dec' },
             { name: 'Sales Operations', credits: 2, when: 'T6 · Jan' },

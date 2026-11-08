@@ -6,8 +6,9 @@
 import { SECTIONS, YEAR1_IDS, YEAR2_IDS, GRADE_SCALE, DEFAULT_YEAR1_CREDITS, DEFAULT_YEAR2_CREDITS, absoluteGrade } from './data.js';
 import { calcTermGPA, countGrades, requiredGPA, gradeToPoints } from './calculator.js';
 import { evaluatePromotionRules, evaluateDiplomaRules, getOverallStatus } from './rules.js';
+import { cloud, authErrorMessage } from './cloud.js';
 
-const STORAGE_KEY = 'spjimr-bm-cgpa-y1y2-v4';
+const GUEST_KEY = 'spjimr-bm-cgpa-y1y2-v4';
 const byId = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
 
 // ─── State ────────────────────────────────────────────────────
@@ -29,39 +30,139 @@ function defaultState() {
   };
 }
 
-function loadState() {
+/**
+ * Merge a saved state (local or cloud) onto today's course list.
+ * Grades follow courses by name, so courses that moved between terms
+ * (e.g. the old Term 5 courses now in Term 4) keep their grades.
+ */
+function mergeState(saved) {
   const base = defaultState();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return base;
-    const saved = JSON.parse(raw);
-    Object.assign(base.y1Shortcut, saved.y1Shortcut || {});
-    Object.assign(base.target, saved.target || {});
-    for (const id of Object.keys(base.sections)) {
-      const s = saved.sections && saved.sections[id];
-      if (!s) continue;
-      const def = byId[id];
-      const merged = { ...base.sections[id], ...s };
-      // Fixed Year 1 course lists always come from data.js; only grades are restored.
-      if (!def.editable) {
-        merged.courses = base.sections[id].courses.map((c, i) => ({
-          ...c, grade: (s.courses && s.courses[i] && s.courses[i].grade) || '—',
-          pct: (s.courses && s.courses[i] && s.courses[i].pct) || '',
-        }));
-      }
-      base.sections[id] = merged;
+  if (!saved || typeof saved !== 'object') return base;
+  const byName = new Map();
+  Object.values(saved.sections || {}).forEach(sec => (sec.courses || []).forEach(c => {
+    if (c && c.name && c.grade && c.grade !== '—' && !byName.has(c.name)) byName.set(c.name, { grade: c.grade, pct: c.pct || '' });
+  }));
+  const carry = c => { const g = byName.get(c.name); return g ? { ...c, grade: g.grade, pct: g.pct } : c; };
+
+  Object.assign(base.y1Shortcut, saved.y1Shortcut || {});
+  Object.assign(base.target, saved.target || {});
+  for (const id of Object.keys(base.sections)) {
+    const def = byId[id];
+    const s = saved.sections && saved.sections[id];
+    const b = base.sections[id];
+    if (!s) { b.courses = b.courses.map(carry); continue; }
+    const merged = { ...b, directMode: !!s.directMode, directGPA: s.directGPA ?? '', directCredits: s.directCredits ?? b.directCredits };
+    if (!def.editable) {
+      // Fixed course lists come from data.js; only grades are restored.
+      merged.courses = b.courses.map(carry);
+    } else {
+      // Editable lists keep the student's rows; official (fixed) courses are refreshed from data.js
+      // and any that are missing are added back.
+      const savedRows = (s.courses || []).filter(c => c && typeof c === 'object');
+      // Student-added rows first (where "+ Add course" puts them), then official courses in official order.
+      const own = savedRows.filter(c => !c.fixed).map(c => ({ ...c }));
+      const official = def.courses.filter(c => c.fixed).map(c => {
+        const prev = savedRows.find(r => r.fixed && r.name === c.name);
+        return prev ? { ...c, grade: prev.grade || '—', pct: prev.pct || '' } : carry({ ...c, grade: '—' });
+      });
+      merged.courses = [...own, ...official];
     }
-    if (saved.activeTab && (saved.activeTab === 'summary' || byId[saved.activeTab])) {
-      base.activeTab = saved.activeTab;
-    }
-  } catch (_) { /* storage unavailable or corrupt — start fresh */ }
+    base.sections[id] = merged;
+  }
+  if (saved.activeTab && (saved.activeTab === 'summary' || byId[saved.activeTab])) base.activeTab = saved.activeTab;
   return base;
 }
 
-let state = loadState();
+function readLocal(key) {
+  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
+}
+
+// ─── Accounts ─────────────────────────────────────────────────
+// account.status: 'off' (no backend) | 'guest' | 'loading' | 'saved' | 'saving' | 'error'
+const account = { user: null, status: cloud.enabled ? 'guest' : 'off' };
+const storageKey = () => (account.user ? `${GUEST_KEY}:${account.user.uid}` : GUEST_KEY);
+
+let state = mergeState(readLocal(GUEST_KEY));
+
+let cloudTimer = null;
+let lastSynced = null;   // fingerprint of what the cloud already has
+const fingerprint = st => JSON.stringify({ ...st, activeTab: undefined });
 
 function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* ignore */ }
+  try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch (_) { /* ignore */ }
+  if (account.user && account.status !== 'loading' && fingerprint(state) !== lastSynced) {
+    clearTimeout(cloudTimer);
+    setSync('saving');
+    cloudTimer = setTimeout(pushToCloud, 1200);
+  }
+}
+
+async function pushToCloud() {
+  clearTimeout(cloudTimer);
+  const user = account.user;
+  if (!user) return;
+  try {
+    const fp = fingerprint(state);
+    await cloud.save(user.uid, user.email, state);
+    lastSynced = fp;
+    if (account.user && account.user.uid === user.uid) setSync('saved');
+  } catch (_) {
+    setSync('error');
+    cloudTimer = setTimeout(pushToCloud, 8000);   // retry quietly
+  }
+}
+
+function setSync(status) {
+  account.status = status;
+  const el = app.querySelector('[data-live="sync"]');
+  if (el) el.innerHTML = syncText();
+}
+
+function syncText() {
+  return {
+    loading: '<span class="sync-dot is-busy" aria-hidden="true"></span>Loading your grades…',
+    saving: '<span class="sync-dot is-busy" aria-hidden="true"></span>Saving…',
+    saved: '<span class="sync-dot is-ok" aria-hidden="true"></span>Saved to your account',
+    error: '<span class="sync-dot is-err" aria-hidden="true"></span>Couldn’t save. Retrying…',
+  }[account.status] || '';
+}
+
+async function onUserChanged(user) {
+  const prev = account.user;
+  if (prev && (!user || user.uid !== prev.uid)) {
+    // Signed out (or switched): drop that user's copy from this device.
+    try { localStorage.removeItem(`${GUEST_KEY}:${prev.uid}`); } catch (_) { /* ignore */ }
+  }
+  account.user = user;
+  lastSynced = null;
+  if (!user) {
+    account.status = 'guest';
+    state = mergeState(readLocal(GUEST_KEY));
+    render();
+    return;
+  }
+  account.status = 'loading';
+  render();
+  try {
+    const remote = await cloud.load(user.uid);
+    if (!account.user || account.user.uid !== user.uid) return;
+    if (remote) {
+      state = mergeState(remote);
+      lastSynced = fingerprint(state);
+      account.status = 'saved';
+      render();
+    } else {
+      // First sign-in: start the account from what's on this device.
+      state = mergeState(readLocal(`${GUEST_KEY}:${user.uid}`) || readLocal(GUEST_KEY));
+      account.status = 'saving';
+      render();
+      await pushToCloud();
+    }
+  } catch (_) {
+    state = mergeState(readLocal(`${GUEST_KEY}:${user.uid}`) || state);
+    account.status = 'error';
+    render();
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -214,10 +315,24 @@ function renderHeader() {
             <span class="header-year-pill">PGDM(BM) · Year 1 + 2</span>
           </h1>
         </div>
+        <div class="account" aria-label="Account">${accountHTML()}</div>
       </div>
     </header>
     <div class="tracker" data-live="tracker" aria-label="Live CGPA tracker" role="region">${trackerHTML()}</div>
   `;
+}
+
+function accountHTML() {
+  if (!cloud.enabled) return `<span class="account-note">Saved on this device</span>`;
+  if (!account.user) {
+    return `<button type="button" class="account-btn" data-action="open-auth">Sign in to save your grades</button>`;
+  }
+  return `
+    <div class="account-user">
+      <span class="account-email" title="${esc(account.user.email)}">${esc(account.user.email)}</span>
+      <span class="account-sync" data-live="sync" role="status">${syncText()}</span>
+    </div>
+    <button type="button" class="account-btn ghost" data-action="sign-out">Sign out</button>`;
 }
 
 const VERDICT_ICON = { pass: '✓', fail: '✕', 'at-risk': '!', provisional: '✓', empty: '–' };
@@ -773,6 +888,12 @@ app.addEventListener('click', e => {
 
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
+  if (btn.dataset.action === 'open-auth') { openAuth('signin'); return; }
+  if (btn.dataset.action === 'sign-out') {
+    clearTimeout(cloudTimer);
+    (account.status === 'saving' ? pushToCloud() : Promise.resolve()).finally(() => cloud.signOut());
+    return;
+  }
   const id = btn.dataset.section;
   const ss = state.sections[id];
   switch (btn.dataset.action) {
@@ -866,5 +987,102 @@ app.addEventListener('keydown', e => {
   if (t) t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 });
 
+// ─── Sign-in dialog (lives outside #app so re-renders don't close it) ──
+let authMode = 'signin';
+const dlg = document.createElement('dialog');
+dlg.className = 'auth-dialog';
+dlg.setAttribute('aria-labelledby', 'auth-title');
+document.body.appendChild(dlg);
+
+const AUTH_COPY = {
+  signin: { title: 'Sign in', sub: 'Your grades are saved to your account, so they follow you to any device.', submit: 'Sign in' },
+  signup: { title: 'Create an account', sub: 'Use your email and a password (6+ characters). Your grades are saved to your account.', submit: 'Create account' },
+  reset: { title: 'Reset your password', sub: 'We’ll email you a link to set a new password.', submit: 'Send reset link' },
+};
+
+function renderAuth(message = '', kind = 'error') {
+  const c = AUTH_COPY[authMode];
+  dlg.innerHTML = `
+    <form class="auth-form" novalidate>
+      <button type="button" class="auth-close" data-auth="close" aria-label="Close">✕</button>
+      <h2 id="auth-title">${c.title}</h2>
+      <p class="auth-sub">${c.sub}</p>
+      <label class="auth-field">Email
+        <input type="email" name="email" autocomplete="email" required inputmode="email" value="${esc(dlg.dataset.email || '')}" />
+      </label>
+      ${authMode !== 'reset' ? `
+        <label class="auth-field">Password
+          <input type="password" name="password" required minlength="6"
+            autocomplete="${authMode === 'signup' ? 'new-password' : 'current-password'}" />
+        </label>
+        <label class="auth-check"><input type="checkbox" data-auth="show" /> Show password</label>` : ''}
+      <p class="auth-msg ${kind}" role="${kind === 'error' ? 'alert' : 'status'}">${message}</p>
+      <button type="submit" class="auth-submit">${c.submit}</button>
+      <div class="auth-links">
+        ${authMode === 'signin' ? `
+          <button type="button" class="link-btn" data-auth="reset">Forgot password?</button>
+          <button type="button" class="link-btn" data-auth="signup">New here? Create an account</button>` : ''}
+        ${authMode !== 'signin' ? `<button type="button" class="link-btn" data-auth="signin">Back to sign in</button>` : ''}
+      </div>
+    </form>`;
+}
+
+function openAuth(mode) {
+  authMode = mode;
+  renderAuth();
+  if (!dlg.open) dlg.showModal();
+  const first = dlg.querySelector('input[name="email"]');
+  if (first) first.focus();
+}
+
+dlg.addEventListener('click', e => {
+  if (e.target === dlg) { dlg.close(); return; }           // click on backdrop
+  const a = e.target.closest('[data-auth]');
+  if (!a) return;
+  const email = dlg.querySelector('input[name="email"]');
+  if (email) dlg.dataset.email = email.value;
+  if (a.dataset.auth === 'close') dlg.close();
+  else if (a.dataset.auth === 'show') {
+    const pw = dlg.querySelector('input[name="password"]');
+    if (pw) pw.type = a.checked ? 'text' : 'password';
+  } else openAuth(a.dataset.auth);
+});
+
+dlg.addEventListener('submit', async e => {
+  e.preventDefault();
+  const form = e.target;
+  const email = form.email.value.trim();
+  const password = form.password ? form.password.value : '';
+  dlg.dataset.email = email;
+  const btn = form.querySelector('.auth-submit');
+  btn.disabled = true; btn.textContent = 'Please wait…';
+  try {
+    if (authMode === 'signin') await cloud.signIn(email, password);
+    else if (authMode === 'signup') await cloud.signUp(email, password);
+    else {
+      await cloud.resetPassword(email);
+      authMode = 'signin';
+      renderAuth('Check your inbox for the reset link, then sign in with your new password.', 'ok');
+      return;
+    }
+    dlg.close();
+  } catch (err) {
+    renderAuth(authErrorMessage(err));
+    const pw = dlg.querySelector('input[name="password"]');
+    (pw || dlg.querySelector('input[name="email"]')).focus();
+  }
+});
+
+dlg.addEventListener('close', () => {
+  const opener = app.querySelector('[data-action="open-auth"]') || app.querySelector('[data-action="sign-out"]');
+  if (opener) opener.focus();
+});
+
+// Push any pending save before the tab is hidden or closed.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && account.status === 'saving') pushToCloud();
+});
+
 // ─── Boot ─────────────────────────────────────────────────────
 render();
+if (cloud.enabled) cloud.watch(onUserChanged).catch(() => { account.status = 'off'; render(); });

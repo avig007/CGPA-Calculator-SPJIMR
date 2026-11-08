@@ -1363,3 +1363,58 @@ body {
   .trk-year { display: none; }
   .grade-select { min-width: 92px; padding-right: 22px; }
 }
+
+/* ═══════════════ v6 — accounts ═══════════════ */
+.header-inner { gap: 1rem; }
+.account { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+.account-note { color: rgba(255,255,255,0.85); font-size: 0.78rem; }
+.account-user { display: flex; flex-direction: column; align-items: flex-end; min-width: 0; }
+.account-email { color: #fff; font-size: 0.82rem; font-weight: 600; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-sync { color: rgba(255,255,255,0.85); font-size: 0.72rem; display: flex; align-items: center; gap: 6px; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.sync-dot.is-ok { background: #69f0ae; }
+.sync-dot.is-busy { background: #ffd54f; }
+.sync-dot.is-err { background: #ff8a80; }
+.account-btn {
+  min-height: 38px; padding: 0 16px; border-radius: 999px; border: 2px solid #fff;
+  background: #fff; color: var(--brand-dark); font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.account-btn:hover { background: #e3f2fd; }
+.account-btn.ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,0.7); }
+.account-btn.ghost:hover { background: rgba(255,255,255,0.12); }
+
+.auth-dialog {
+  border: none; border-radius: 16px; padding: 0; width: min(420px, calc(100vw - 32px));
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35); color: var(--text-primary);
+}
+.auth-dialog::backdrop { background: rgba(10, 25, 41, 0.55); }
+.auth-form { position: relative; padding: 1.75rem 1.75rem 1.5rem; display: flex; flex-direction: column; gap: 0.85rem; font-family: inherit; }
+.auth-form h2 { font-size: 1.35rem; font-weight: 800; margin: 0; padding-right: 2rem; }
+.auth-sub { font-size: 0.86rem; color: var(--text-secondary); margin: -4px 0 4px; }
+.auth-close { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border: none; background: transparent; border-radius: 8px; font-size: 1rem; color: var(--text-secondary); cursor: pointer; }
+.auth-close:hover { background: var(--bg); }
+.auth-field { display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+.auth-field input { font: inherit; font-size: 1rem; padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px; color: var(--text-primary); }
+.auth-field input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
+.auth-check { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-secondary); }
+.auth-check input { width: 18px; height: 18px; }
+.auth-msg { font-size: 0.84rem; min-height: 0; margin: 0; }
+.auth-msg:empty { display: none; }
+.auth-msg.error { color: var(--fail); background: var(--fail-bg); border: 1px solid var(--fail-bd); padding: 8px 12px; border-radius: 8px; }
+.auth-msg.ok { color: var(--pass); background: var(--pass-bg); border: 1px solid var(--pass-bd); padding: 8px 12px; border-radius: 8px; }
+.auth-submit { min-height: 46px; border: none; border-radius: 10px; background: var(--brand-dark); color: #fff; font: inherit; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+.auth-submit:hover { background: #0f2942; }
+.auth-submit:disabled { opacity: 0.7; cursor: progress; }
+.auth-links { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; }
+
+@media (max-width: 760px) {
+  .account-note { display: none; }
+  .account-email { max-width: 140px; font-size: 0.74rem; }
+  .account-sync { font-size: 0.66rem; }
+  .account-btn { min-height: 34px; padding: 0 12px; font-size: 0.74rem; }
+  .header-title, .header-title-bold { font-size: 1.1rem; }
+}
+@media (max-width: 420px) {
+  .header-logo { display: none; }
+}
+.auth-dialog { margin: auto; max-height: calc(100dvh - 32px); overflow: auto; }
