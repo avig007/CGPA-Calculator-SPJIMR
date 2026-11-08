@@ -19,4 +19,8 @@ export const firebaseConfig = {
     appId: '1:23668626111:web:914b26f9eb73fcee076c0a',
 };
 
-export const cloudConfigured = !import.meta.env.VITE_DEVICE_ONLY && Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+// __DEVICE_ONLY__ is set by the build (VITE_DEVICE_ONLY=1); it doesn't exist when the
+// source runs directly in the browser, hence the typeof check.
+const deviceOnly = typeof __DEVICE_ONLY__ !== 'undefined' && __DEVICE_ONLY__;
+
+export const cloudConfigured = !deviceOnly && Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);

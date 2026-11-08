@@ -8,6 +8,9 @@ export default defineConfig({
   // Relative base works on GitHub Pages, Vercel and any static host.
   base: './',
   root: '.',
+  define: {
+    __DEVICE_ONLY__: JSON.stringify(process.env.VITE_DEVICE_ONLY === '1'),
+  },
   resolve: {
     alias: mock ? [{ find: /^\.\/cloud\.js$/, replacement: fileURLToPath(new URL('./test/cloud.mock.js', import.meta.url)) }] : [],
   },

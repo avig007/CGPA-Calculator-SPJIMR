@@ -1,20 +1,22 @@
 // ═══════════════════════════════════════════════════════════════
 //  Cloud accounts: Firebase Auth (email + password) and Firestore.
 //  Each user's grades live in one document: users/{uid}.
-//  The Firebase SDK is loaded only when a config is present, so the
-//  device-only build stays small.
+//  The Firebase SDK is loaded only when a config is present.
 // ═══════════════════════════════════════════════════════════════
 
 import { firebaseConfig, cloudConfigured } from './firebase-config.js';
 
+const FIREBASE_CDN = 'https://www.gstatic.com/firebasejs/11.10.0';
 let sdk = null;
 
 async function ready() {
     if (sdk) return sdk;
+    // Loaded from Google's Firebase CDN, so the site runs both as a Vite build
+    // and straight from the source files (GitHub Pages "deploy from a branch").
     const [{ initializeApp }, auth, fs] = await Promise.all([
-        import('firebase/app'),
-        import('firebase/auth'),
-        import('firebase/firestore'),
+        import(/* @vite-ignore */ `${FIREBASE_CDN}/firebase-app.js`),
+        import(/* @vite-ignore */ `${FIREBASE_CDN}/firebase-auth.js`),
+        import(/* @vite-ignore */ `${FIREBASE_CDN}/firebase-firestore.js`),
     ]);
     const app = initializeApp(firebaseConfig);
     sdk = { auth, fs, a: auth.getAuth(app), db: fs.getFirestore(app) };
@@ -74,6 +76,8 @@ export const cloud = {
 /** Friendly text for Firebase error codes. */
 export function authErrorMessage(err) {
     const code = (err && err.code) || '';
+    // No Firebase code: the SDK itself couldn't load (offline, or blocked by an extension).
+    if (!code) return 'Can’t reach the sign-in service. Check your internet connection, or allow gstatic.com if an ad blocker is on.';
     const map = {
         'auth/invalid-email': 'That email address doesn’t look right.',
         'auth/missing-email': 'Enter your email address.',
