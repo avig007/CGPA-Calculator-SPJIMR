@@ -253,7 +253,7 @@ const app = document.getElementById('app');
 /** A CSS selector that finds "the same" control again after a re-render. */
 function focusKey(el) {
   if (!el || !el.dataset || el === document.body) return null;
-  const keys = ['tab', 'action', 'field', 'section', 'i'].filter(k => el.dataset[k] !== undefined);
+  const keys = ['tab', 'mnav', 'action', 'field', 'section', 'i'].filter(k => el.dataset[k] !== undefined);
   if (!keys.length) return null;
   return keys.map(k => `[data-${k}="${el.dataset[k]}"]`).join('');
 }
@@ -375,7 +375,36 @@ function renderTabs() {
         ${group(2, SECTIONS.filter(s => s.year === 2))}
       </div>
     </nav>
+    ${renderPhoneNav()}
   `;
+}
+
+// Phones: no sideways scrolling. Row 1 picks Summary / Year 1 / Year 2,
+// row 2 shows that year's terms as equal-width buttons.
+const lastTermOfYear = { 1: YEAR1_IDS[0], 2: YEAR2_IDS[0] };
+
+function renderPhoneNav() {
+  const active = state.activeTab;
+  const activeYear = active === 'summary' ? null : byId[active].year;
+  if (activeYear) lastTermOfYear[activeYear] = active;
+  const view = (label, tab, on) => `
+    <button type="button" class="mnav-view ${on ? 'is-on' : ''}" data-tab="${tab}" data-mnav="view-${label}"
+      aria-pressed="${on}">${label}</button>`;
+  const terms = activeYear ? SECTIONS.filter(s => s.year === activeYear) : [];
+  return `
+    <nav class="mnav" aria-label="Sections">
+      <div class="mnav-views" role="group" aria-label="View">
+        ${view('Summary', 'summary', active === 'summary')}
+        ${view('Year 1', lastTermOfYear[1], activeYear === 1)}
+        ${view('Year 2', lastTermOfYear[2], activeYear === 2)}
+      </div>
+      ${terms.length ? `
+        <div class="mnav-terms" role="group" aria-label="Year ${activeYear} terms" style="--n:${terms.length}">
+          ${terms.map(sec => `
+            <button type="button" class="mnav-term ${active === sec.id ? 'is-on' : ''}" data-tab="${sec.id}" data-mnav="term"
+              ${active === sec.id ? 'aria-current="page"' : ''} aria-label="Year ${activeYear} ${sec.name}">${sec.ncl ? 'NCL' : sec.name}</button>`).join('')}
+        </div>` : ''}
+    </nav>`;
 }
 
 function figure(title, r, note) {

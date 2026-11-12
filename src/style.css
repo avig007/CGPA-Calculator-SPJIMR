@@ -159,6 +159,24 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; letter-spa
   border-radius: 3px 3px 0 0; background: var(--saffron);
 }
 
+/* Phone navigation (replaces the tab bar on small screens) */
+.mnav { display: none; }
+.mnav-views {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px;
+  background: var(--purple-wash); border-radius: 12px;
+}
+.mnav-view {
+  min-height: 44px; border: 0; border-radius: 9px; background: transparent;
+  font-weight: 700; font-size: 0.95rem; color: var(--purple-strong);
+}
+.mnav-view.is-on { background: var(--purple); color: #fff; box-shadow: 0 1px 3px rgba(43, 16, 70, 0.25); }
+.mnav-terms { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 8px; margin-top: 10px; }
+.mnav-term {
+  min-height: 44px; padding: 0 4px; border: 1.5px solid var(--line-strong); border-radius: var(--r-control);
+  background: var(--surface); font-weight: 600; font-size: 0.92rem; color: var(--ink-2);
+}
+.mnav-term.is-on { border: 2px solid var(--purple); background: var(--purple-tint); color: var(--purple-strong); font-weight: 800; }
+
 /* ═══════════════ Panels (shared) ═══════════════ */
 .panel {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel);
@@ -435,8 +453,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; letter-spa
   .tracker .credit-progress { margin-left: 0; flex-basis: 100%; }
 
   .main-content { padding: 4px 16px 48px; }
-  .tabs-nav { margin: 0 -16px 20px; padding: 0 16px; }
-  .tab-group { padding-left: 10px; margin-left: 6px; }
+  .tabs-nav { display: none; }
+  .mnav { display: block; margin: 12px 0 18px; }
 
   .hero-verdict, .hero-figure { padding: 20px; }
   .hero-badge { width: 40px; height: 40px; font-size: 1.15rem; }
